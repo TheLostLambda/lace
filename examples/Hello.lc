@@ -2,9 +2,15 @@
 "This is a docstring?"
 main = "Hello, Lace!" >> stdout ; How do we add a newline?
 
+;; S-Expression Form
+; (def main () ; Should I have `[]` for arguments instead of `()`?
+;   "This is a docstring"
+;   (>> "Hello, Lace!" (stdout))
+
 ;; Alternative syntaxes?
 ; "Hello, Lace!" -> stdout
 ; "Hello, Lace!" => stdout
+; (I like `|` a lot, but I'd need a replacement for `>|` too?)
 ; "Hello, Lace!" | stdout
 ; "Hello, Lace!" # stdout
 ; "Hello, Lace!" . stdout
@@ -36,6 +42,13 @@ double = stdin
   >> parse Num
   >> _ * 2
   >> stdout
+
+;; S-Expression Form
+(def double ()
+  (>> (stdin)
+      (parse Num)
+      (* _ 2)
+      (stdout)
 
 ;; DNA to RNA
 dna_to_rna in out = file in >> transcribe >> file out
@@ -121,3 +134,11 @@ log 64 base:2
 
 ;; I think that solves that rather nicely — just make `:` a special character
 ;; that's illegal in identifiers
+
+;; To make things like `signal_a + signal_b` just work, I should allow universal
+;; method adapters to be written. These universal adapters should be inserted
+;; into the list of patterns that every function checks its arguments against
+;; before dispatch. This would allow defintions that vectorise operations to be
+;; automatically implemented for all operatators. Think something like:
+a::Signal + b::Signal = combine (+) a b
+;; but generic over the operator instead of just working for `+`
