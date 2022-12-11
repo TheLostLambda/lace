@@ -2,10 +2,12 @@
   :version "0.1.0"
   :author ""
   :license ""
+  :serial t
   :depends-on ()
   :components ((:module "src"
                 :components
-                ((:file "main"))))
+                ((:file "scanner")
+                 (:file "main"))))
   :description ""
   :in-order-to ((test-op (test-op "llace/tests"))))
 

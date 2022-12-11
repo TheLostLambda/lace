@@ -19,7 +19,7 @@
   (make-instance 'scanner :source source))
 
 ;; TODO: Add a constructor to this struct
-(defstruct token
+(defstruct (token (:constructor make-token (type lexeme literal line indent)))
   type lexeme literal line indent)
 
 (defmethod scan-tokens ((obj scanner))
