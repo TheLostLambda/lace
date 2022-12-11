@@ -1,0 +1,17 @@
+;; Basic Maths
+2 + 2
+7 - 3
+3 * 4
+8 / 4
+
+;; More "complex" maths
+2 ^ 3 == 8
+3 % 2 == 1
+
+;; Relational operators
+3 > 2
+2 < 8
+2 <= 2
+7 >= 3
+4 == 4
+4 /= 5

@@ -1,0 +1,123 @@
+;; This is a comment
+"This is a docstring?"
+main = "Hello, Lace!" >> stdout ; How do we add a newline?
+
+;; Alternative syntaxes?
+; "Hello, Lace!" -> stdout
+; "Hello, Lace!" => stdout
+; "Hello, Lace!" | stdout
+; "Hello, Lace!" # stdout
+; "Hello, Lace!" . stdout
+
+;; This will double the numbers passed to stdin
+;; Should `nil` be False? No, it's just a value that cannot produce a stream.
+;; Types should have capital names! Case as in Rust?
+;; Damn, this is tricky because I need to think about how streams actually work.
+;; I'd like streams to be written as operations applied to single elements and
+;; for values to be just pumped through them, but how then do I filter a stream?
+;; How do I make filtering a stream different from filtering a list which is a
+;; single element within that stream?
+;; I don't have filter here any more, so I can get around that issue for now,
+;; but it still exists!
+;; I suppose this means `nil` values are dropped from the pipeline
+;; automatically? That seems like that will have repercussions...
+double = stdin >> parse Num >> _ * 2 >> stdout
+
+;; It might be worth thinking about a multiline version of this chaining syntax
+; double = flow
+;   stdin
+;   parse Num
+;   _ * 2
+;   stdout
+
+;; But honestly, it seems like keeping the same syntax spread over several
+;; lines works just fine and is clearer
+double = stdin
+  >> parse Num
+  >> _ * 2
+  >> stdout
+
+;; DNA to RNA
+dna_to_rna in out = file in >> transcribe >> file out
+  where transcribe t@('T' | 't') = t + 1
+        transcribe n = n
+
+;; Since multiple dispatch is a paradigm, cut down on repetition of the
+;; function / method name using indentation
+base_pair 'A' = 'T'
+          'T' = 'A'
+          'C' = 'G'
+          'G' = 'C'
+
+;; The above code is just syntactic sugar for:
+base_pair 'A' = 'T'
+base_pair 'T' = 'A'
+base_pair 'C' = 'G'
+base_pair 'G' = 'C'
+
+;; This replaces `if` statements quite naturally
+;; Nothing like:
+;; is_it_so? x = if x then "Yes" else "No"
+;; Just:
+is_it_so? true = "Yes"
+          false = "No"
+
+;;; Filter out any odd numbers
+
+;; Start by defining the (eventually) built-in `odd` function
+odd x = x % 2 /= 0 ; Use Haskell-style not-equals (`/=`)
+;; Could also use the placeholder notation
+odd = _ % 2 /= 0
+
+;; Let's start by simply creating a filter function
+only_even = filter (not $ odd _) ; `$` works as it does in Haskell
+;; `not` is overloaded and knows to invert boolean functions
+only_even = filter (not odd)
+;; Need to think this through more — values should be length-1 streams
+only_even = filter (odd >> not)
+
+;; To pass a whole stream to a function, instead of one item at a time, the
+;; collection operator `>|` is used instead of the normal chaining operator `>>`
+;; To print all even squares less than ten, separated by ", ":
+odd_squares = 1..10 >> _ ^ 2 >| only_even >> stdout sep:", "
+
+;; And the multiline version:
+odd_squares = 1..10
+  >> _ ^ 2
+  >| only_even
+  >> stdout sep:", "
+
+;; Expanded out a bit
+odd_squares = 1..10
+  >> _ ^ 2
+  >| filter (_ % 2 == 0)
+  >> stdout sep:", "
+
+;; I feel like the keyword argument syntax needs a lot of work still...
+stdout sep=", "
+stdout sep = ", "
+stdout sep: ", "
+stdout sep => ", "
+stdout (sep : ", ")
+stdout (sep . ", ")
+stdout { sep: ", " }
+
+;; I do think that all arguments should be keywords though! As in R, a function
+;; like this:
+log base x = ; perform the logarithm
+;; Should be callable in both of these ways:
+log 2 64
+log 64 base=2
+
+;; As a bit of an "oh, shit" moment, that last snippet — `log 64 base=2` — is
+;; totally indistinguishable from a function definition for a `log` function
+;; that requires `64` as its first argument and takes any `base` value before
+;; simply returning the value `2`
+
+;; Perhaps then, `=` should be reserved for introducing definitions and `:`
+;; should be instead used for "filling holes"
+log 2 64
+log 64 base:2
+
+;; I think that solves that rather nicely — just make `:` a special character
+;; that's illegal in identifiers
