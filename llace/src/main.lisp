@@ -1,5 +1,5 @@
 (defpackage llace
-  (:use :cl :llace/scanner)
+  (:use :cl)
   (:export :repl))
 (in-package :llace)
 

@@ -6,7 +6,7 @@
   :depends-on ()
   :components ((:module "src"
                 :components
-                ((:file "scanner")
+                ((:file "parsing-primatives")
                  (:file "main"))))
   :description ""
   :in-order-to ((test-op (test-op "llace/tests"))))
