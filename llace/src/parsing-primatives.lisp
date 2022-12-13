@@ -20,7 +20,7 @@ set of functions needed to write a parser.
 
 (defpackage llace/parsing-primatives
   (:use :cl)
-  (:export :parse :item :<$>))
+  (:export :parse :item :<$> :pure :<*>))
 (in-package :llace/parsing-primatives)
 
 #|------------------------------------------------------------------------------
@@ -76,5 +76,22 @@ operator: `<$>`.
          ; Then apply `f` to the parsed component only, reconstructing the pair
          (cons (funcall f parsed) unparsed)))
      ; Actually generate the parsed input whose parse list is mapped over
-     (funcall parser input))))
+     (parse parser input))))
 
+
+;;; DIRTY WORK BELOW!
+;; Applicative
+(defun pure (value)
+  (lambda (input) (acons value input nil)))
+
+(defun <*> (parser-f parser-x)
+  (lambda (input)
+    (mapcar
+     (lambda (pair)
+       (destructuring-bind (f . unparsed) pair
+         (parse (<$> f parser-x) unparsed)))
+     (parse parser-f input))))
+
+; liftA2 f x = (<*>) (fmap f x)
+;; (defun liftA2 (f parser-a parser-b)
+;;   (<*> (<$> f parser-a)))
