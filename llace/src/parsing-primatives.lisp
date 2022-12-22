@@ -20,7 +20,7 @@ set of functions needed to write a parser.
 
 (defpackage llace/parsing-primatives
   (:use :cl)
-  (:export :parse :item :<$> :pure :<*>))
+  (:export :parse :item :>>= :>> :constant :nothing :either))
 (in-package :llace/parsing-primatives)
 
 #|------------------------------------------------------------------------------
@@ -80,18 +80,56 @@ operator: `<$>`.
 
 
 ;;; DIRTY WORK BELOW!
-;; Applicative
-(defun pure (value)
+;; Need to implement: >>, >>=, return, empty, <|>, some, many
+
+;; Need to test this on nil, single-parse, and multi-parse cases!
+(defun >>= (parser f)
+  (lambda (input)
+    (mapcan
+     (lambda (pair)
+       (destructuring-bind (parsed . unparsed) pair
+         (parse (funcall f parsed) unparsed)))
+     (parse parser input))))
+
+(defun >> (parser-a parser-b)
+  (>>= parser-a (constantly parser-b)))
+
+;; This is the same as `return` but doesn't clash with the name
+;; I should consider renaming this or getting around the package lock!
+(defun constant (value)
   (lambda (input) (acons value input nil)))
 
-(defun <*> (parser-f parser-x)
-  (lambda (input)
-    (mapcar
-     (lambda (pair)
-       (destructuring-bind (f . unparsed) pair
-         (parse (<$> f parser-x) unparsed)))
-     (parse parser-f input))))
+;; Also a name that needs a lot of work!
+(defun nothing ()
+  (constantly nil))
 
-; liftA2 f x = (<*>) (fmap f x)
-;; (defun liftA2 (f parser-a parser-b)
-;;   (<*> (<$> f parser-a)))
+;; This is `<|>`, but that's an illegal symbol name!
+(defun either (parser-a parser-b)
+  (lambda (input)
+    (or (parse parser-a input)
+        (parse parser-b input))))
+
+(defun liftA2 (f parser-a parser-b)
+  (lambda (input)
+    (mapcan
+     (lambda (pair)
+       (destructuring-bind (parsed-a . unparsed) pair
+         (mapcan
+          (lambda (pair)
+            (destructuring-bind (parsed-b . unparsed) pair
+              (acons (funcall f parsed-a parsed-b) unparsed nil)))
+          (parse parser-b unparsed))))
+     (parse parser-a input))))
+
+;; This is `some`, but with a WIP name that doesn't clash
+(defun one-or-more (parser)
+  (labels ((self (input parsed)
+             (let ((result (parse parser input)))
+               (break)
+               (if result
+                   (self (cdar result) (cons (caar result) parsed))
+                   (acons (nreverse parsed) input nil)))))
+    (lambda (input) (self input nil))))
+
+;; some_v = liftA2 (:) v many_v
+;; liftA2 f x = (<*>) (fmap f x)
