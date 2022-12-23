@@ -4,7 +4,7 @@
                          Authored by Brooks Rady, 2022
 
 
-This literate package defines a number of parsing primatives and the ways in
+This literate package defines a number of parsing primitives and the ways in
 which they can be combined to express choice and sequencing operations. This
 code is based on the Haskell library written by Graham Hutton for parsing using
 monadic combinators and has been adapted to Common Lisp for use in the `llace`
@@ -12,21 +12,23 @@ interpreter.
 
 Haskell's built-in support for typeclasses like Functor, Applicative, Monad, and
 Alternative allow a lot of useful functions and syntax to be derived from just a
-few, minimal definitions. Common Lisp doesn't provide the same wide range of
+few minimal definitions. Common Lisp doesn't provide the same wide range of
 formal abstractions, so we'll have to write a bit more code here! The goal is
 not to implement a complete set of typeclasses; it's just to define the minimal
 set of functions needed to write a parser.
 ------------------------------------------------------------------------------|#
 
-(defpackage llace/parsing-primatives
-  (:use :cl)
-  (:export :parse :item :>>= :>> :constant :nothing :either))
-(in-package :llace/parsing-primatives)
+(defpackage llace/functional-parsing
+  (:use :cl :serapeum/bundle :clazy)
+  (:export :parse :item :>>= :>> :constant :nothing :either :zero-or-more
+           :one-or-more :build-parser :sat :digit :lower :upper :letter
+           :alphanum :is-char :is-string))
+(in-package :llace/functional-parsing)
 
 #|------------------------------------------------------------------------------
-In functional parsing, a parser is a function that takes a `string` and outputs
-a list of pairs, with the first element of each pair containing the parsed tree
-and the second containing the remaining (unparsed) `string`.
+In functional parsing, a parser is a function that takes a string and outputs a
+list of pairs, with the first element of each pair containing the parsed item
+and the second containing the remaining (unparsed) string.
 
 Parsing a digit from the string "123" would yield `((#\1 . "23"))`, where `#\1`
 is the parsed digit and "23" is the remaining string. Returning these parse
@@ -34,8 +36,8 @@ results as a list allows for both failure (an empty list) and ambiguity (a list
 containing several partially parsed forms) to be encoded.
 
 To start, let's define `parse` as an alias for `funcall`, then write a simple
-parser that returns the first `character` of a string where possible and returns
-an empty list when it isn't.
+`item` parser that returns the first character of a string where possible and
+returns an empty list when it isn't.
 ------------------------------------------------------------------------------|#
 
 (defun parse (parser input)
@@ -44,22 +46,20 @@ an empty list when it isn't.
 
 (defun item ()
   "Parse the first character of a string"
-  ; This function returns a lambda to maintain consistent with many of the
-  ; compound parsers defined later — use `parse` to call it
+  ;; This function returns a lambda to maintain consistent with many of the
+  ;; compound parsers defined later — use `parse` to call it
   (lambda (input)
-    ; Short-circuit and return the empty list `nil` if the string is empty
+    ;; Short-circuit and return the empty list `nil` if the string is empty
     (and (string/= "" input) 
-         ; Append a new pair to the empty list `nil` with the parsed character
-         ; and the remaining substring
+         ;; Append a new pair to the empty list `nil` with the parsed
+         ;; character and the remaining substring
          (acons (char input 0) (subseq input 1) nil)))) 
 
 ;;; DIRTY WORK BELOW!
 ;; Need to implement: >>, >>=, return, empty, <|>, some, many
 
-(ql:quickload :clazy)
-
 ;; Need to test this on nil, single-parse, and multi-parse cases!
-(lazy:deflazy >>= (parser f)
+(deflazy >>= (parser f)
   (lambda (input)
     (mapcan
      (lambda (pair)
@@ -105,7 +105,7 @@ an empty list when it isn't.
   (let ((body (reverse (subst 'constant :return body))))
     (reduce (lambda (body expr)
               (case (car expr)
-                (:bind `(lazy:call '>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
+                (:bind `(call '>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
                 (otherwise `(>> ,expr ,body))))
             body)))
 
@@ -138,74 +138,3 @@ an empty list when it isn't.
         (is-char (char string 0))
         (is-string (subseq string 1))
         (:return string))))
-
-;;; Just playing around
-
-(defun ident ()
-  (build-parser
-    (:bind x (lower))
-    (:bind xs (zero-or-more (alphanum)))
-    (:return (coerce (cons x xs) 'string))))
-
-(defun nat ()
-  (build-parser
-    (:bind xs (one-or-more (digit)))
-    (:return (parse-integer (coerce xs 'string)))))
-
-(defun int ()
-  (either (build-parser
-            (is-char #\-)
-            (:bind n (nat))
-            (:return (- n)))
-          (nat)))
-
-;; Use whitespacep from serapeum!
-(defun is-space ()
-  (build-parser
-    (zero-or-more (sat (lambda (c) (char= c #\Space))))
-    (:return nil)))
-
-;; Need to pick between `(token (int))` and `(token #'int)`
-;; Make that `one-or-more` match this choice! All zero argument parsers should
-;; be variables instead of functions?
-(defun token (parser)
-  (build-parser
-    (is-space)
-    (:bind token parser)
-    (is-space)
-    (:return token)))
-
-(defun an-identifier () (token (ident)))
-(defun a-natural () (token (nat)))
-(defun an-integer () (token (int)))
-(defun a-symbol (s) (token (is-string s)))
-
-;;; Parsing and evaluating maths!
-
-;; expr ::= term + expr | term
-;; term ::= factor * term | factor
-;; factor ::= (expr) | int
-
-(defun expr ()
-  (either (build-parser
-            (:bind x (term))
-            (is-char #\+)
-            (:bind y (expr))
-            (:return (+ x y)))
-          (term)))
-
-(defun term ()
-  (either (build-parser
-            (:bind x (factor))
-            (is-char #\*)
-            (:bind y (term))
-            (:return (* x y)))
-          (factor)))
-
-(defun factor ()
-  (either (build-parser
-            (is-char #\()
-            (:bind x (expr))
-            (is-char #\))
-            (:return x))
-          (int)))

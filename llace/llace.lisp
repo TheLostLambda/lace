@@ -1,4 +1,3 @@
-;;; A small file that loads the ASDF system and pulls in QL packages
-(pushnew (uiop:getcwd) asdf:*central-registry* :test #'equal)
-(ql:quickload :rove)
-(asdf:load-system :llace)
+;;; A small file that loads the ASDF system and pulls in QL dependencies
+(pushnew (uiop:getcwd) ql:*local-project-directories* :test #'equal)
+(ql:quickload :llace/tests)

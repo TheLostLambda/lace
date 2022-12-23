@@ -1,23 +1,26 @@
 (defsystem "llace"
   :version "0.1.0"
-  :author ""
-  :license ""
+  :author "Brooks J Rady"
+  :license "AGPLv3"
   :serial t
-  :depends-on ()
+  :depends-on ("serapeum"
+               "clazy")
   :components ((:module "src"
                 :components
-                ((:file "parsing-primatives")
+                ((:file "functional-parsing")
+                 (:file "parsing")
                  (:file "main"))))
-  :description ""
+  :description "An interpreter for the Lace language"
   :in-order-to ((test-op (test-op "llace/tests"))))
 
 (defsystem "llace/tests"
-  :author ""
-  :license ""
+  :author "Brooks J Rady"
+  :license "AGPLv3"
   :depends-on ("llace"
-               "rove")
+               "parachute")
   :components ((:module "tests"
                 :components
-                ((:file "main"))))
+                ((:file "functional-parsing")
+                 (:file "main"))))
   :description "Test system for llace"
-  :perform (test-op (op c) (symbol-call :rove :run c)))
+  :perform (test-op (op c) (symbol-call :parachute :test (symbol-call :parachute :test-packages))))
