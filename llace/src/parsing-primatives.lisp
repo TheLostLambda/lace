@@ -53,37 +53,13 @@ an empty list when it isn't.
          ; and the remaining substring
          (acons (char input 0) (subseq input 1) nil)))) 
 
-#|------------------------------------------------------------------------------
-Now we can start working our way through some minimal "typeclass" definitions —
-we'll start with Functors, which allow a function to be applied to some wrapped
-value. In our case, this wrapping context is that of the parser and functions
-are applied to the parsed value (leaving the unparsed string untouched). The
-function that provides this unwrap-apply-wrap behaviour is `fmap` or, as an
-operator: `<$>`.
-------------------------------------------------------------------------------|#
-
-(defun <$> (f parser)
-  "Apply a function within the context of a parser"
-  ; Since our context is a function, we need to return another parser function
-  (lambda (input)
-    ; `mapcar` lets us apply `f` to every parse option returned by `parser` —
-    ; this handles both failed parses (mapping over `nil` returns `nil`) and
-    ; ambiguous parses (where there exist several parse options)
-    (mapcar
-     (lambda (pair)
-       ; For each pair in the parse list, split into parsed and unparsed parts
-       (destructuring-bind (parsed . unparsed) pair
-         ; Then apply `f` to the parsed component only, reconstructing the pair
-         (cons (funcall f parsed) unparsed)))
-     ; Actually generate the parsed input whose parse list is mapped over
-     (parse parser input))))
-
-
 ;;; DIRTY WORK BELOW!
 ;; Need to implement: >>, >>=, return, empty, <|>, some, many
 
+(ql:quickload :clazy)
+
 ;; Need to test this on nil, single-parse, and multi-parse cases!
-(defun >>= (parser f)
+(lazy:deflazy >>= (parser f)
   (lambda (input)
     (mapcan
      (lambda (pair)
@@ -91,6 +67,7 @@ operator: `<$>`.
          (parse (funcall f parsed) unparsed)))
      (parse parser input))))
 
+;; This will likely need to be made lazy at some point too!
 (defun >> (parser-a parser-b)
   (>>= parser-a (constantly parser-b)))
 
@@ -109,27 +86,126 @@ operator: `<$>`.
     (or (parse parser-a input)
         (parse parser-b input))))
 
-(defun liftA2 (f parser-a parser-b)
-  (lambda (input)
-    (mapcan
-     (lambda (pair)
-       (destructuring-bind (parsed-a . unparsed) pair
-         (mapcan
-          (lambda (pair)
-            (destructuring-bind (parsed-b . unparsed) pair
-              (acons (funcall f parsed-a parsed-b) unparsed nil)))
-          (parse parser-b unparsed))))
-     (parse parser-a input))))
-
 ;; This is `some`, but with a WIP name that doesn't clash
-(defun one-or-more (parser)
+(defun zero-or-more (parser)
   (labels ((self (input parsed)
              (let ((result (parse parser input)))
-               (break)
                (if result
                    (self (cdar result) (cons (caar result) parsed))
-                   (acons (nreverse parsed) input nil)))))
+                   (acons (reverse parsed) input nil)))))
     (lambda (input) (self input nil))))
 
-;; some_v = liftA2 (:) v many_v
-;; liftA2 f x = (<*>) (fmap f x)
+(defun one-or-more (parser)
+  (lambda (input)
+    (let ((result (parse (zero-or-more parser) input)))
+      (when (caar result)
+          result))))
+
+(defmacro build-parser (&body body)
+  (let ((body (reverse (subst 'constant :return body))))
+    (reduce (lambda (body expr)
+              (case (car expr)
+                (:bind `(lazy:call '>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
+                (otherwise `(>> ,expr ,body))))
+            body)))
+
+;;; Derived Primitives
+
+;; (defun sat (predicate)
+;;   (>>= (item) (lambda (char) (if (funcall predicate char) (constant char) (nothing)))))
+
+(defun sat (predicate)
+  (build-parser
+   (:bind char (item))
+   (if (funcall predicate char)
+       (:return char)
+       (nothing))))
+
+(defun digit () (sat #'digit-char-p))
+(defun lower () (sat #'lower-case-p))
+(defun upper () (sat #'upper-case-p))
+(defun letter () (sat #'alpha-char-p))
+(defun alphanum () (sat #'alphanumericp))
+
+;; Ugh... Naming...
+(defun is-char (char)
+  (sat (lambda (c) (char-equal char c))))
+
+(defun is-string (string)
+  (if (string= "" string)
+      (constant nil)
+      (build-parser
+        (is-char (char string 0))
+        (is-string (subseq string 1))
+        (:return string))))
+
+;;; Just playing around
+
+(defun ident ()
+  (build-parser
+    (:bind x (lower))
+    (:bind xs (zero-or-more (alphanum)))
+    (:return (coerce (cons x xs) 'string))))
+
+(defun nat ()
+  (build-parser
+    (:bind xs (one-or-more (digit)))
+    (:return (parse-integer (coerce xs 'string)))))
+
+(defun int ()
+  (either (build-parser
+            (is-char #\-)
+            (:bind n (nat))
+            (:return (- n)))
+          (nat)))
+
+;; Use whitespacep from serapeum!
+(defun is-space ()
+  (build-parser
+    (zero-or-more (sat (lambda (c) (char= c #\Space))))
+    (:return nil)))
+
+;; Need to pick between `(token (int))` and `(token #'int)`
+;; Make that `one-or-more` match this choice! All zero argument parsers should
+;; be variables instead of functions?
+(defun token (parser)
+  (build-parser
+    (is-space)
+    (:bind token parser)
+    (is-space)
+    (:return token)))
+
+(defun an-identifier () (token (ident)))
+(defun a-natural () (token (nat)))
+(defun an-integer () (token (int)))
+(defun a-symbol (s) (token (is-string s)))
+
+;;; Parsing and evaluating maths!
+
+;; expr ::= term + expr | term
+;; term ::= factor * term | factor
+;; factor ::= (expr) | int
+
+(defun expr ()
+  (either (build-parser
+            (:bind x (term))
+            (is-char #\+)
+            (:bind y (expr))
+            (:return (+ x y)))
+          (term)))
+
+(defun term ()
+  (either (build-parser
+            (:bind x (factor))
+            (is-char #\*)
+            (:bind y (term))
+            (:return (* x y)))
+          (factor)))
+
+(defun factor ()
+  (either (build-parser
+            (is-char #\()
+            (:bind x (expr))
+            (is-char #\))
+            (:return x))
+          (int)))
