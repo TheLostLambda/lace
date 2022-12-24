@@ -13,15 +13,15 @@
   (is equal '() (parse (llace/parsing::@natural) "-123abc"))
   (is equal '() (parse (llace/parsing::@natural) "abc123")))
 
-(define-test int
-  (is equal '() (parse (llace/parsing::int) ""))
-  (is equal '((1 . "")) (parse (llace/parsing::int) "1"))
-  (is equal '((-1 . "")) (parse (llace/parsing::int) "-1"))
-  (is equal '((123 . "")) (parse (llace/parsing::int) "123"))
-  (is equal '((-123 . "")) (parse (llace/parsing::int) "-123"))
-  (is equal '((123 . "abc")) (parse (llace/parsing::int) "123abc"))
-  (is equal '((-123 . "abc")) (parse (llace/parsing::int) "-123abc"))
-  (is equal '() (parse (llace/parsing::int) "abc123")))
+(define-test @integer
+  (is equal '() (parse (llace/parsing::@integer) ""))
+  (is equal '((1 . "")) (parse (llace/parsing::@integer) "1"))
+  (is equal '((-1 . "")) (parse (llace/parsing::@integer) "-1"))
+  (is equal '((123 . "")) (parse (llace/parsing::@integer) "123"))
+  (is equal '((-123 . "")) (parse (llace/parsing::@integer) "-123"))
+  (is equal '((123 . "abc")) (parse (llace/parsing::@integer) "123abc"))
+  (is equal '((-123 . "abc")) (parse (llace/parsing::@integer) "-123abc"))
+  (is equal '() (parse (llace/parsing::@integer) "abc123")))
 
 (define-test spacing
   (is equal '((() . "")) (parse (llace/parsing::spacing) ""))
@@ -43,21 +43,21 @@
   (is equal '() (parse (llace/parsing::@tnatural) "-123abc"))
   (is equal '() (parse (llace/parsing::@tnatural) "abc123")))
 
-(define-test an-integer
-  (is equal '() (parse (llace/parsing::an-integer) ""))
-  (is equal '((1 . "")) (parse (llace/parsing::an-integer) "1"))
-  (is equal '((1 . "")) (parse (llace/parsing::an-integer) "   1 	 "))
-  (is equal '((-1 . "")) (parse (llace/parsing::an-integer) "-1"))
-  (is equal '((-1 . "")) (parse (llace/parsing::an-integer) "	 -1  "))
-  (is equal '((123 . "")) (parse (llace/parsing::an-integer) "123"))
-  (is equal '((123 . "")) (parse (llace/parsing::an-integer) "  123	 "))
-  (is equal '((-123 . "")) (parse (llace/parsing::an-integer) "-123"))
-  (is equal '((-123 . "")) (parse (llace/parsing::an-integer) " 	 -123    "))
-  (is equal '((123 . "abc")) (parse (llace/parsing::an-integer) "123abc"))
-  (is equal '((123 . "abc")) (parse (llace/parsing::an-integer) "	123 abc"))
-  (is equal '((-123 . "abc")) (parse (llace/parsing::an-integer) "-123abc"))
-  (is equal '((-123 . "abc")) (parse (llace/parsing::an-integer) "    -123	abc"))
-  (is equal '() (parse (llace/parsing::an-integer) "abc123")))
+(define-test @tinteger
+  (is equal '() (parse (llace/parsing::@tinteger) ""))
+  (is equal '((1 . "")) (parse (llace/parsing::@tinteger) "1"))
+  (is equal '((1 . "")) (parse (llace/parsing::@tinteger) "   1 	 "))
+  (is equal '((-1 . "")) (parse (llace/parsing::@tinteger) "-1"))
+  (is equal '((-1 . "")) (parse (llace/parsing::@tinteger) "	 -1  "))
+  (is equal '((123 . "")) (parse (llace/parsing::@tinteger) "123"))
+  (is equal '((123 . "")) (parse (llace/parsing::@tinteger) "  123	 "))
+  (is equal '((-123 . "")) (parse (llace/parsing::@tinteger) "-123"))
+  (is equal '((-123 . "")) (parse (llace/parsing::@tinteger) " 	 -123    "))
+  (is equal '((123 . "abc")) (parse (llace/parsing::@tinteger) "123abc"))
+  (is equal '((123 . "abc")) (parse (llace/parsing::@tinteger) "	123 abc"))
+  (is equal '((-123 . "abc")) (parse (llace/parsing::@tinteger) "-123abc"))
+  (is equal '((-123 . "abc")) (parse (llace/parsing::@tinteger) "    -123	abc"))
+  (is equal '() (parse (llace/parsing::@tinteger) "abc123")))
 
 (define-test a-character
   (is equal '() (parse (llace/parsing::a-character #\-) ""))

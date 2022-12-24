@@ -10,7 +10,7 @@
     (:bind xs (@one-or-more (@digit)))
     (@return (parse-integer (coerce xs 'string)))))
 
-(defun int ()
+(defun @integer ()
   (either (parser
             (@char #\-)
             (:bind n (@natural))
@@ -23,7 +23,7 @@
     (@zero-or-more (either (@char #\Space) (@char #\Tab)))
     (@return nil)))
 
-;; Need to pick between `(token (int))` and `(token #'int)`
+;; Need to pick between `(token (@integer))` and `(token #'@integer)`
 ;; Make that `@one-or-more` match this choice! All zero argument parsers should
 ;; be variables instead of functions?
 (defun token (parser)
@@ -34,7 +34,7 @@
     (@return token)))
 
 (defun @tnatural () (token (@natural)))
-(defun an-integer () (token (int)))
+(defun @tinteger () (token (@integer)))
 (defun a-character (c) (token (@char c)))
 (defun a-symbol (s) (token (@string s)))
 
@@ -42,7 +42,7 @@
 
 ;; expr ::= term + expr | term
 ;; term ::= factor * term | factor
-;; factor ::= (expr) | int
+;; factor ::= (expr) | @integer
 
 (defun expr ()
   (either (parser
@@ -66,4 +66,4 @@
             (:bind x (expr))
             (a-character #\))
             (@return x))
-          (an-integer)))
+          (@tinteger)))
