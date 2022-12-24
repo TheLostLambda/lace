@@ -44,3 +44,87 @@
     (is equal '((#\4 . "a")) (parse digit-or-item "4a"))
     (is equal '((#\4 . "abc")) (parse digit-or-item "4abc"))
     (finish (parse (either (item) (loop)) "1"))))
+
+(define-test zero-or-more
+  (let ((maybe-some-digits (zero-or-more (digit))))
+    (is equal '((() . "")) (parse maybe-some-digits ""))
+    (is equal '(((#\1) . "")) (parse maybe-some-digits "1"))
+    (is equal '((() . "a")) (parse maybe-some-digits "a"))
+    (is equal '(((#\1 #\2 #\3) . "")) (parse maybe-some-digits "123"))
+    (is equal '((() . "abc")) (parse maybe-some-digits "abc"))
+    (is equal '(((#\1 #\2 #\3) . "abc")) (parse maybe-some-digits "123abc"))))
+
+(define-test one-or-more
+  (let ((some-digits (one-or-more (digit))))
+    (is equal '() (parse some-digits ""))
+    (is equal '(((#\1) . "")) (parse some-digits "1"))
+    (is equal '() (parse some-digits "a"))
+    (is equal '(((#\1 #\2 #\3) . "")) (parse some-digits "123"))
+    (is equal '() (parse some-digits "abc"))
+    (is equal '(((#\1 #\2 #\3) . "abc")) (parse some-digits "123abc"))))
+
+(define-test digit
+  (is equal '() (parse (digit) ""))
+  (is equal '((#\1 . "")) (parse (digit) "1"))
+  (is equal '() (parse (digit) "a"))
+  (is equal '((#\1 . "23")) (parse (digit) "123"))
+  (is equal '() (parse (digit) "abc"))
+  (is equal '((#\1 . "23abc")) (parse (digit) "123abc")))
+
+(define-test lower
+  (is equal '() (parse (lower) ""))
+  (is equal '() (parse (lower) "A"))
+  (is equal '((#\a . "")) (parse (lower) "a"))
+  (is equal '() (parse (lower) "ABC"))
+  (is equal '((#\a . "bc")) (parse (lower) "abc"))
+  (is equal '() (parse (lower) "ABCabc")))
+
+(define-test upper
+  (is equal '() (parse (upper) ""))
+  (is equal '((#\A . "")) (parse (upper) "A"))
+  (is equal '() (parse (upper) "a"))
+  (is equal '((#\A . "BC")) (parse (upper) "ABC"))
+  (is equal '() (parse (upper) "abc"))
+  (is equal '((#\A . "BCabc")) (parse (upper) "ABCabc")))
+
+(define-test letter
+  (is equal '() (parse (letter) ""))
+  (is equal '() (parse (letter) "1"))
+  (is equal '((#\a . "")) (parse (letter) "a"))
+  (is equal '((#\A . "")) (parse (letter) "A"))
+  (is equal '() (parse (letter) "123"))
+  (is equal '((#\a . "bc")) (parse (letter) "abc"))
+  (is equal '((#\A . "BC")) (parse (letter) "ABC"))
+  (is equal '() (parse (letter) "123abc"))
+  (is equal '((#\a . "bc123")) (parse (letter) "abc123"))
+  (is equal '((#\A . "BC123")) (parse (letter) "ABC123")))
+
+(define-test alphanum
+  (is equal '() (parse (alphanum) ""))
+  (is equal '((#\1 . "")) (parse (alphanum) "1"))
+  (is equal '((#\a . "")) (parse (alphanum) "a"))
+  (is equal '((#\A . "")) (parse (alphanum) "A"))
+  (is equal '((#\1 . "23")) (parse (alphanum) "123"))
+  (is equal '((#\a . "bc")) (parse (alphanum) "abc"))
+  (is equal '((#\A . "BC")) (parse (alphanum) "ABC"))
+  (is equal '((#\1 . "23abc")) (parse (alphanum) "123abc"))
+  (is equal '((#\a . "bc123")) (parse (alphanum) "abc123"))
+  (is equal '((#\A . "BC123")) (parse (alphanum) "ABC123")))
+
+(define-test is-char
+  (is equal '() (parse (is-char #\-) ""))
+  (is equal '() (parse (is-char #\-) "1"))
+  (is equal '() (parse (is-char #\-) "a"))
+  (is equal '() (parse (is-char #\-) "_"))
+  (is equal '((#\- . "")) (parse (is-char #\-) "-"))
+  (is equal '((#\- . "1")) (parse (is-char #\-) "-1"))
+  (is equal '((#\- . "123")) (parse (is-char #\-) "-123")))
+
+(define-test is-string
+  (is equal '() (parse (is-string "let") ""))
+  (is equal '() (parse (is-string "let") "l"))
+  (is equal '() (parse (is-string "let") "le"))
+  (is equal '(("let" . "")) (parse (is-string "let") "let"))
+  (is equal '() (parse (is-string "let") "leet"))
+  (is equal '(("let" . "me")) (parse (is-string "let") "letme"))
+  (is equal '(("let" . " x = 42;")) (parse (is-string "let") "let x = 42;")))

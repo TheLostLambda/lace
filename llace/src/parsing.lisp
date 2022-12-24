@@ -1,14 +1,9 @@
 (defpackage llace/parsing
-  (:use :cl :llace/functional-parsing))
+  (:use :cl :llace/functional-parsing)
+  (:export :expr))
 (in-package :llace/parsing)
 
 ;;; Just playing around
-
-(defun ident ()
-  (build-parser
-    (:bind x (lower))
-    (:bind xs (zero-or-more (alphanum)))
-    (:return (coerce (cons x xs) 'string))))
 
 (defun nat ()
   (build-parser
@@ -23,9 +18,9 @@
           (nat)))
 
 ;; Use whitespacep from serapeum!
-(defun is-space ()
+(defun spacing ()
   (build-parser
-    (zero-or-more (sat (lambda (c) (char= c #\Space))))
+    (zero-or-more (either (is-char #\Space) (is-char #\Tab)))
     (:return nil)))
 
 ;; Need to pick between `(token (int))` and `(token #'int)`
@@ -33,14 +28,14 @@
 ;; be variables instead of functions?
 (defun token (parser)
   (build-parser
-    (is-space)
+    (spacing)
     (:bind token parser)
-    (is-space)
+    (spacing)
     (:return token)))
 
-(defun an-identifier () (token (ident)))
 (defun a-natural () (token (nat)))
 (defun an-integer () (token (int)))
+(defun a-character (c) (token (is-char c)))
 (defun a-symbol (s) (token (is-string s)))
 
 ;;; Parsing and evaluating maths!
@@ -52,7 +47,7 @@
 (defun expr ()
   (either (build-parser
             (:bind x (term))
-            (is-char #\+)
+            (a-character #\+)
             (:bind y (expr))
             (:return (+ x y)))
           (term)))
@@ -60,15 +55,15 @@
 (defun term ()
   (either (build-parser
             (:bind x (factor))
-            (is-char #\*)
+            (a-character #\*)
             (:bind y (term))
             (:return (* x y)))
           (factor)))
 
 (defun factor ()
   (either (build-parser
-            (is-char #\()
+            (a-character #\()
             (:bind x (expr))
-            (is-char #\))
+            (a-character #\))
             (:return x))
-          (int)))
+          (an-integer)))

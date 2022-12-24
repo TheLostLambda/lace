@@ -22,6 +22,7 @@
   :components ((:module "tests"
                 :components
                 ((:file "functional-parsing")
+                 (:file "parsing")
                  (:file "main"))))
   :description "Test system for llace"
   :perform (test-op (op c) (symbol-call :parachute :test (symbol-call :parachute :test-packages))))
