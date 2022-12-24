@@ -111,25 +111,25 @@ returns an empty list when it isn't.
 
 ;;; Derived Primitives
 
-;; (defun sat (predicate)
+;; (defun @satisfies (predicate)
 ;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (@return char) (@nothing)))))
 
-(defun sat (predicate)
+(defun @satisfies (predicate)
   (parser
    (:bind char (@item))
    (if (funcall predicate char)
        (@return char)
        (@nothing))))
 
-(defun digit () (sat #'digit-char-p))
-(defun lower () (sat #'lower-case-p))
-(defun upper () (sat #'upper-case-p))
-(defun letter () (sat #'alpha-char-p))
-(defun alphanum () (sat #'alphanumericp))
+(defun digit () (@satisfies #'digit-char-p))
+(defun lower () (@satisfies #'lower-case-p))
+(defun upper () (@satisfies #'upper-case-p))
+(defun letter () (@satisfies #'alpha-char-p))
+(defun alphanum () (@satisfies #'alphanumericp))
 
 ;; Ugh... Naming...
 (defun is-char (char)
-  (sat (lambda (c) (char-equal char c))))
+  (@satisfies (lambda (c) (char-equal char c))))
 
 (defun is-string (string)
   (if (string= "" string)
