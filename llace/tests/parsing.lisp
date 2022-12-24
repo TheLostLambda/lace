@@ -3,15 +3,15 @@
   (:shadowing-import-from :parachute :true))
 (in-package :llace/tests/parsing)
 
-(define-test nat
-  (is equal '() (parse (llace/parsing::nat) ""))
-  (is equal '((1 . "")) (parse (llace/parsing::nat) "1"))
-  (is equal '() (parse (llace/parsing::nat) "-1"))
-  (is equal '((123 . "")) (parse (llace/parsing::nat) "123"))
-  (is equal '() (parse (llace/parsing::nat) "-123"))
-  (is equal '((123 . "abc")) (parse (llace/parsing::nat) "123abc"))
-  (is equal '() (parse (llace/parsing::nat) "-123abc"))
-  (is equal '() (parse (llace/parsing::nat) "abc123")))
+(define-test @natural
+  (is equal '() (parse (llace/parsing::@natural) ""))
+  (is equal '((1 . "")) (parse (llace/parsing::@natural) "1"))
+  (is equal '() (parse (llace/parsing::@natural) "-1"))
+  (is equal '((123 . "")) (parse (llace/parsing::@natural) "123"))
+  (is equal '() (parse (llace/parsing::@natural) "-123"))
+  (is equal '((123 . "abc")) (parse (llace/parsing::@natural) "123abc"))
+  (is equal '() (parse (llace/parsing::@natural) "-123abc"))
+  (is equal '() (parse (llace/parsing::@natural) "abc123")))
 
 (define-test int
   (is equal '() (parse (llace/parsing::int) ""))
@@ -30,18 +30,18 @@
   (is equal '((() . "")) (parse (llace/parsing::spacing) "   	"))
   (is equal '((() . "foo  	")) (parse (llace/parsing::spacing) "   	foo  	")))
 
-(define-test a-natural
-  (is equal '() (parse (llace/parsing::a-natural) ""))
-  (is equal '((1 . "")) (parse (llace/parsing::a-natural) "1"))
-  (is equal '((1 . "")) (parse (llace/parsing::a-natural) "  1	"))
-  (is equal '() (parse (llace/parsing::a-natural) "-1"))
-  (is equal '((123 . "")) (parse (llace/parsing::a-natural) "123"))
-  (is equal '((123 . "")) (parse (llace/parsing::a-natural) "	 123   "))
-  (is equal '() (parse (llace/parsing::a-natural) "-123"))
-  (is equal '((123 . "abc")) (parse (llace/parsing::a-natural) "123abc"))
-  (is equal '((123 . "abc")) (parse (llace/parsing::a-natural) " 123	abc"))
-  (is equal '() (parse (llace/parsing::a-natural) "-123abc"))
-  (is equal '() (parse (llace/parsing::a-natural) "abc123")))
+(define-test @tnatural
+  (is equal '() (parse (llace/parsing::@tnatural) ""))
+  (is equal '((1 . "")) (parse (llace/parsing::@tnatural) "1"))
+  (is equal '((1 . "")) (parse (llace/parsing::@tnatural) "  1	"))
+  (is equal '() (parse (llace/parsing::@tnatural) "-1"))
+  (is equal '((123 . "")) (parse (llace/parsing::@tnatural) "123"))
+  (is equal '((123 . "")) (parse (llace/parsing::@tnatural) "	 123   "))
+  (is equal '() (parse (llace/parsing::@tnatural) "-123"))
+  (is equal '((123 . "abc")) (parse (llace/parsing::@tnatural) "123abc"))
+  (is equal '((123 . "abc")) (parse (llace/parsing::@tnatural) " 123	abc"))
+  (is equal '() (parse (llace/parsing::@tnatural) "-123abc"))
+  (is equal '() (parse (llace/parsing::@tnatural) "abc123")))
 
 (define-test an-integer
   (is equal '() (parse (llace/parsing::an-integer) ""))

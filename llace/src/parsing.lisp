@@ -5,7 +5,7 @@
 
 ;;; Just playing around
 
-(defun nat ()
+(defun @natural ()
   (parser
     (:bind xs (@one-or-more (@digit)))
     (@return (parse-integer (coerce xs 'string)))))
@@ -13,9 +13,9 @@
 (defun int ()
   (either (parser
             (@char #\-)
-            (:bind n (nat))
+            (:bind n (@natural))
             (@return (- n)))
-          (nat)))
+          (@natural)))
 
 ;; Use whitespacep from serapeum!
 (defun spacing ()
@@ -33,7 +33,7 @@
     (spacing)
     (@return token)))
 
-(defun a-natural () (token (nat)))
+(defun @tnatural () (token (@natural)))
 (defun an-integer () (token (int)))
 (defun a-character (c) (token (@char c)))
 (defun a-symbol (s) (token (@string s)))
