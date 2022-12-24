@@ -20,7 +20,7 @@
 ;; Use whitespacep from serapeum!
 (defun spacing ()
   (build-parser
-    (zero-or-more (either (is-char #\Space) (is-char #\Tab)))
+    (@zero-or-more (either (is-char #\Space) (is-char #\Tab)))
     (@return nil)))
 
 ;; Need to pick between `(token (int))` and `(token #'int)`

@@ -45,8 +45,8 @@
     (is equal '((#\4 . "abc")) (parse digit-or-item "4abc"))
     (finish (parse (either (@item) (loop)) "1"))))
 
-(define-test zero-or-more
-  (let ((maybe-some-digits (zero-or-more (digit))))
+(define-test @zero-or-more
+  (let ((maybe-some-digits (@zero-or-more (digit))))
     (is equal '((() . "")) (parse maybe-some-digits ""))
     (is equal '(((#\1) . "")) (parse maybe-some-digits "1"))
     (is equal '((() . "a")) (parse maybe-some-digits "a"))

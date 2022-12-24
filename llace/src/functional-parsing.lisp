@@ -20,7 +20,7 @@ set of functions needed to write a parser.
 
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle :llace/lazy)
-  (:export :parse :@item :>>= :>> :@return :@nothing :either :zero-or-more
+  (:export :parse :@item :>>= :>> :@return :@nothing :either :@zero-or-more
            :one-or-more :build-parser :sat :digit :lower :upper :letter
            :alphanum :is-char :is-string))
 (in-package :llace/functional-parsing)
@@ -88,7 +88,7 @@ returns an empty list when it isn't.
         (parse parser-b input))))
 
 ;; This is `some`, but with a WIP name that doesn't clash
-(defun zero-or-more (parser)
+(defun @zero-or-more (parser)
   (labels ((self (input parsed)
              (let ((result (parse parser input)))
                (if result
@@ -98,7 +98,7 @@ returns an empty list when it isn't.
 
 (defun one-or-more (parser)
   (lambda (input)
-    (let ((result (parse (zero-or-more parser) input)))
+    (let ((result (parse (@zero-or-more parser) input)))
       (when (caar result)
           result))))
 
