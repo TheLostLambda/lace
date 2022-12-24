@@ -7,7 +7,7 @@
 
 (defun nat ()
   (parser
-    (:bind xs (@one-or-more (digit)))
+    (:bind xs (@one-or-more (@digit)))
     (@return (parse-integer (coerce xs 'string)))))
 
 (defun int ()

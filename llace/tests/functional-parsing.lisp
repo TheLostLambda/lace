@@ -17,7 +17,7 @@
     (finish (parse (>>= (@item) (loop)) ""))))
 
 (define-test >>
-  (let ((digit-item (>> (digit) (@item))))
+  (let ((digit-item (>> (@digit) (@item))))
     (is equal '() (parse digit-item ""))
     (is equal '() (parse digit-item "4"))
     (is equal '() (parse digit-item "b"))
@@ -36,7 +36,7 @@
   (is equal '() (parse (@nothing) "foo")))
 
 (define-test either
-  (let ((digit-or-item (either (digit) (@item))))
+  (let ((digit-or-item (either (@digit) (@item))))
     (is equal '() (parse digit-or-item ""))
     (is equal '((#\4 . "")) (parse digit-or-item "4"))
     (is equal '((#\b . "")) (parse digit-or-item "b"))
@@ -46,7 +46,7 @@
     (finish (parse (either (@item) (loop)) "1"))))
 
 (define-test @zero-or-more
-  (let ((maybe-some-digits (@zero-or-more (digit))))
+  (let ((maybe-some-digits (@zero-or-more (@digit))))
     (is equal '((() . "")) (parse maybe-some-digits ""))
     (is equal '(((#\1) . "")) (parse maybe-some-digits "1"))
     (is equal '((() . "a")) (parse maybe-some-digits "a"))
@@ -55,7 +55,7 @@
     (is equal '(((#\1 #\2 #\3) . "abc")) (parse maybe-some-digits "123abc"))))
 
 (define-test @one-or-more
-  (let ((some-digits (@one-or-more (digit))))
+  (let ((some-digits (@one-or-more (@digit))))
     (is equal '() (parse some-digits ""))
     (is equal '(((#\1) . "")) (parse some-digits "1"))
     (is equal '() (parse some-digits "a"))
@@ -63,13 +63,13 @@
     (is equal '() (parse some-digits "abc"))
     (is equal '(((#\1 #\2 #\3) . "abc")) (parse some-digits "123abc"))))
 
-(define-test digit
-  (is equal '() (parse (digit) ""))
-  (is equal '((#\1 . "")) (parse (digit) "1"))
-  (is equal '() (parse (digit) "a"))
-  (is equal '((#\1 . "23")) (parse (digit) "123"))
-  (is equal '() (parse (digit) "abc"))
-  (is equal '((#\1 . "23abc")) (parse (digit) "123abc")))
+(define-test @digit
+  (is equal '() (parse (@digit) ""))
+  (is equal '((#\1 . "")) (parse (@digit) "1"))
+  (is equal '() (parse (@digit) "a"))
+  (is equal '((#\1 . "23")) (parse (@digit) "123"))
+  (is equal '() (parse (@digit) "abc"))
+  (is equal '((#\1 . "23abc")) (parse (@digit) "123abc")))
 
 (define-test lower
   (is equal '() (parse (lower) ""))
