@@ -120,11 +120,11 @@
   (is equal '((#\- . "1")) (parse (@char #\-) "-1"))
   (is equal '((#\- . "123")) (parse (@char #\-) "-123")))
 
-(define-test is-string
-  (is equal '() (parse (is-string "let") ""))
-  (is equal '() (parse (is-string "let") "l"))
-  (is equal '() (parse (is-string "let") "le"))
-  (is equal '(("let" . "")) (parse (is-string "let") "let"))
-  (is equal '() (parse (is-string "let") "leet"))
-  (is equal '(("let" . "me")) (parse (is-string "let") "letme"))
-  (is equal '(("let" . " x = 42;")) (parse (is-string "let") "let x = 42;")))
+(define-test @string
+  (is equal '() (parse (@string "let") ""))
+  (is equal '() (parse (@string "let") "l"))
+  (is equal '() (parse (@string "let") "le"))
+  (is equal '(("let" . "")) (parse (@string "let") "let"))
+  (is equal '() (parse (@string "let") "leet"))
+  (is equal '(("let" . "me")) (parse (@string "let") "letme"))
+  (is equal '(("let" . " x = 42;")) (parse (@string "let") "let x = 42;")))

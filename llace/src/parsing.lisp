@@ -36,7 +36,7 @@
 (defun a-natural () (token (nat)))
 (defun an-integer () (token (int)))
 (defun a-character (c) (token (@char c)))
-(defun a-symbol (s) (token (is-string s)))
+(defun a-symbol (s) (token (@string s)))
 
 ;;; Parsing and evaluating maths!
 

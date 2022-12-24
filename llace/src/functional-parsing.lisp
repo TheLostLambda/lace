@@ -22,7 +22,7 @@ set of functions needed to write a parser.
   (:use :cl :serapeum/bundle :llace/lazy)
   (:export :parse :@item :>>= :>> :@return :@nothing :either :@zero-or-more
            :@one-or-more :parser :@digit :@lower :@upper :@letter :@alphanum
-           :@char :is-string))
+           :@char :@string))
 (in-package :llace/functional-parsing)
 
 #|------------------------------------------------------------------------------
@@ -131,10 +131,10 @@ returns an empty list when it isn't.
 (defun @char (char)
   (@satisfies (lambda (c) (char-equal char c))))
 
-(defun is-string (string)
+(defun @string (string)
   (if (string= "" string)
       (@return nil)
       (parser
         (@char (char string 0))
-        (is-string (subseq string 1))
+        (@string (subseq string 1))
         (@return string))))
