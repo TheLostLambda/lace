@@ -54,8 +54,8 @@
     (is equal '((() . "abc")) (parse maybe-some-digits "abc"))
     (is equal '(((#\1 #\2 #\3) . "abc")) (parse maybe-some-digits "123abc"))))
 
-(define-test one-or-more
-  (let ((some-digits (one-or-more (digit))))
+(define-test @one-or-more
+  (let ((some-digits (@one-or-more (digit))))
     (is equal '() (parse some-digits ""))
     (is equal '(((#\1) . "")) (parse some-digits "1"))
     (is equal '() (parse some-digits "a"))

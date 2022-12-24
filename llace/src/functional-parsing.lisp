@@ -21,7 +21,7 @@ set of functions needed to write a parser.
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle :llace/lazy)
   (:export :parse :@item :>>= :>> :@return :@nothing :either :@zero-or-more
-           :one-or-more :build-parser :sat :digit :lower :upper :letter
+           :@one-or-more :build-parser :sat :digit :lower :upper :letter
            :alphanum :is-char :is-string))
 (in-package :llace/functional-parsing)
 
@@ -96,7 +96,7 @@ returns an empty list when it isn't.
                    (acons (reverse parsed) input nil)))))
     (lambda (input) (self input nil))))
 
-(defun one-or-more (parser)
+(defun @one-or-more (parser)
   (lambda (input)
     (let ((result (parse (@zero-or-more parser) input)))
       (when (caar result)

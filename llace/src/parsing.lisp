@@ -7,7 +7,7 @@
 
 (defun nat ()
   (build-parser
-    (:bind xs (one-or-more (digit)))
+    (:bind xs (@one-or-more (digit)))
     (@return (parse-integer (coerce xs 'string)))))
 
 (defun int ()
@@ -24,7 +24,7 @@
     (@return nil)))
 
 ;; Need to pick between `(token (int))` and `(token #'int)`
-;; Make that `one-or-more` match this choice! All zero argument parsers should
+;; Make that `@one-or-more` match this choice! All zero argument parsers should
 ;; be variables instead of functions?
 (defun token (parser)
   (build-parser
