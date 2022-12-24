@@ -12,7 +12,7 @@
 
 (defun int ()
   (either (parser
-            (is-char #\-)
+            (@char #\-)
             (:bind n (nat))
             (@return (- n)))
           (nat)))
@@ -20,7 +20,7 @@
 ;; Use whitespacep from serapeum!
 (defun spacing ()
   (parser
-    (@zero-or-more (either (is-char #\Space) (is-char #\Tab)))
+    (@zero-or-more (either (@char #\Space) (@char #\Tab)))
     (@return nil)))
 
 ;; Need to pick between `(token (int))` and `(token #'int)`
@@ -35,7 +35,7 @@
 
 (defun a-natural () (token (nat)))
 (defun an-integer () (token (int)))
-(defun a-character (c) (token (is-char c)))
+(defun a-character (c) (token (@char c)))
 (defun a-symbol (s) (token (is-string s)))
 
 ;;; Parsing and evaluating maths!

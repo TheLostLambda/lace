@@ -8,7 +8,7 @@
   (is equal '((#\s . "up")) (parse (@item) "sup")))
 
 (define-test >>=
-  (let ((double-char (>>= (@item) (op (is-char _)))))
+  (let ((double-char (>>= (@item) (op (@char _)))))
     (is equal '() (parse double-char ""))
     (is equal '() (parse double-char "a"))
     (is equal '() (parse double-char "ab"))
@@ -111,14 +111,14 @@
   (is equal '((#\a . "bc123")) (parse (@alphanum) "abc123"))
   (is equal '((#\A . "BC123")) (parse (@alphanum) "ABC123")))
 
-(define-test is-char
-  (is equal '() (parse (is-char #\-) ""))
-  (is equal '() (parse (is-char #\-) "1"))
-  (is equal '() (parse (is-char #\-) "a"))
-  (is equal '() (parse (is-char #\-) "_"))
-  (is equal '((#\- . "")) (parse (is-char #\-) "-"))
-  (is equal '((#\- . "1")) (parse (is-char #\-) "-1"))
-  (is equal '((#\- . "123")) (parse (is-char #\-) "-123")))
+(define-test @char
+  (is equal '() (parse (@char #\-) ""))
+  (is equal '() (parse (@char #\-) "1"))
+  (is equal '() (parse (@char #\-) "a"))
+  (is equal '() (parse (@char #\-) "_"))
+  (is equal '((#\- . "")) (parse (@char #\-) "-"))
+  (is equal '((#\- . "1")) (parse (@char #\-) "-1"))
+  (is equal '((#\- . "123")) (parse (@char #\-) "-123")))
 
 (define-test is-string
   (is equal '() (parse (is-string "let") ""))
