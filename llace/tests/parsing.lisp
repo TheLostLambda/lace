@@ -23,12 +23,12 @@
   (is equal '((-123 . "abc")) (parse (llace/parsing::@integer) "-123abc"))
   (is equal '() (parse (llace/parsing::@integer) "abc123")))
 
-(define-test spacing
-  (is equal '((() . "")) (parse (llace/parsing::spacing) ""))
-  (is equal '((() . "")) (parse (llace/parsing::spacing) " "))
-  (is equal '((() . "")) (parse (llace/parsing::spacing) "	"))
-  (is equal '((() . "")) (parse (llace/parsing::spacing) "   	"))
-  (is equal '((() . "foo  	")) (parse (llace/parsing::spacing) "   	foo  	")))
+(define-test @spacing
+  (is equal '((() . "")) (parse (llace/parsing::@spacing) ""))
+  (is equal '((() . "")) (parse (llace/parsing::@spacing) " "))
+  (is equal '((() . "")) (parse (llace/parsing::@spacing) "	"))
+  (is equal '((() . "")) (parse (llace/parsing::@spacing) "   	"))
+  (is equal '((() . "foo  	")) (parse (llace/parsing::@spacing) "   	foo  	")))
 
 (define-test @tnatural
   (is equal '() (parse (llace/parsing::@tnatural) ""))

@@ -18,7 +18,7 @@
           (@natural)))
 
 ;; Use whitespacep from serapeum!
-(defun spacing ()
+(defun @spacing ()
   (parser
     (@zero-or-more (either (@char #\Space) (@char #\Tab)))
     (@return nil)))
@@ -28,9 +28,9 @@
 ;; be variables instead of functions?
 (defun token (parser)
   (parser
-    (spacing)
+    (@spacing)
     (:bind token parser)
-    (spacing)
+    (@spacing)
     (@return token)))
 
 (defun @tnatural () (token (@natural)))
