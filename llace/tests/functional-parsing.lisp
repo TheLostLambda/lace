@@ -71,13 +71,13 @@
   (is equal '() (parse (@digit) "abc"))
   (is equal '((#\1 . "23abc")) (parse (@digit) "123abc")))
 
-(define-test lower
-  (is equal '() (parse (lower) ""))
-  (is equal '() (parse (lower) "A"))
-  (is equal '((#\a . "")) (parse (lower) "a"))
-  (is equal '() (parse (lower) "ABC"))
-  (is equal '((#\a . "bc")) (parse (lower) "abc"))
-  (is equal '() (parse (lower) "ABCabc")))
+(define-test @lower
+  (is equal '() (parse (@lower) ""))
+  (is equal '() (parse (@lower) "A"))
+  (is equal '((#\a . "")) (parse (@lower) "a"))
+  (is equal '() (parse (@lower) "ABC"))
+  (is equal '((#\a . "bc")) (parse (@lower) "abc"))
+  (is equal '() (parse (@lower) "ABCabc")))
 
 (define-test upper
   (is equal '() (parse (upper) ""))
