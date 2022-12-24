@@ -79,13 +79,13 @@
   (is equal '((#\a . "bc")) (parse (@lower) "abc"))
   (is equal '() (parse (@lower) "ABCabc")))
 
-(define-test upper
-  (is equal '() (parse (upper) ""))
-  (is equal '((#\A . "")) (parse (upper) "A"))
-  (is equal '() (parse (upper) "a"))
-  (is equal '((#\A . "BC")) (parse (upper) "ABC"))
-  (is equal '() (parse (upper) "abc"))
-  (is equal '((#\A . "BCabc")) (parse (upper) "ABCabc")))
+(define-test @upper
+  (is equal '() (parse (@upper) ""))
+  (is equal '((#\A . "")) (parse (@upper) "A"))
+  (is equal '() (parse (@upper) "a"))
+  (is equal '((#\A . "BC")) (parse (@upper) "ABC"))
+  (is equal '() (parse (@upper) "abc"))
+  (is equal '((#\A . "BCabc")) (parse (@upper) "ABCabc")))
 
 (define-test letter
   (is equal '() (parse (letter) ""))
