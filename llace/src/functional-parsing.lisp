@@ -20,7 +20,7 @@ set of functions needed to write a parser.
 
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle :llace/lazy)
-  (:export :parse :@item :>>= :>> :constant :nothing :either :zero-or-more
+  (:export :parse :@item :>>= :>> :@return :nothing :either :zero-or-more
            :one-or-more :build-parser :sat :digit :lower :upper :letter
            :alphanum :is-char :is-string))
 (in-package :llace/functional-parsing)
@@ -73,7 +73,7 @@ returns an empty list when it isn't.
 
 ;; This is the same as `return` but doesn't clash with the name
 ;; I should consider renaming this or getting around the package lock!
-(defun constant (value)
+(defun @return (value)
   (lambda (input) (acons value input nil)))
 
 ;; Also a name that needs a lot of work!
@@ -102,23 +102,22 @@ returns an empty list when it isn't.
           result))))
 
 (defmacro build-parser (&body body)
-  (let ((body (reverse (subst 'constant :return body))))
-    (reduce (lambda (body expr)
-              (case (car expr)
-                (:bind `(>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
-                (otherwise `(>> ,expr ,body))))
-            body)))
+  (reduce (lambda (body expr)
+            (case (car expr)
+              (:bind `(>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
+              (otherwise `(>> ,expr ,body))))
+          (reverse body)))
 
 ;;; Derived Primitives
 
 ;; (defun sat (predicate)
-;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (constant char) (nothing)))))
+;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (@return char) (nothing)))))
 
 (defun sat (predicate)
   (build-parser
    (:bind char (@item))
    (if (funcall predicate char)
-       (:return char)
+       (@return char)
        (nothing))))
 
 (defun digit () (sat #'digit-char-p))
@@ -133,8 +132,8 @@ returns an empty list when it isn't.
 
 (defun is-string (string)
   (if (string= "" string)
-      (constant nil)
+      (@return nil)
       (build-parser
         (is-char (char string 0))
         (is-string (subseq string 1))
-        (:return string))))
+        (@return string))))

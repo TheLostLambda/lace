@@ -27,9 +27,9 @@
     (is equal '((#\a . "bc")) (parse digit-item "4abc"))
     (finish (parse (>> (@item) (loop)) ""))))
 
-(define-test constant
-  (is equal '((42 . "")) (parse (constant 42) ""))
-  (is equal '((42 . "foo")) (parse (constant 42) "foo")))
+(define-test @return
+  (is equal '((42 . "")) (parse (@return 42) ""))
+  (is equal '((42 . "foo")) (parse (@return 42) "foo")))
 
 (define-test nothing
   (is equal '() (parse (nothing) ""))
