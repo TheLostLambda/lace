@@ -20,7 +20,7 @@ set of functions needed to write a parser.
 
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle :llace/lazy)
-  (:export :parse :item :>>= :>> :constant :nothing :either :zero-or-more
+  (:export :parse :@item :>>= :>> :constant :nothing :either :zero-or-more
            :one-or-more :build-parser :sat :digit :lower :upper :letter
            :alphanum :is-char :is-string))
 (in-package :llace/functional-parsing)
@@ -36,7 +36,7 @@ results as a list allows for both failure (an empty list) and ambiguity (a list
 containing several partially parsed forms) to be encoded.
 
 To start, let's define `parse` as an alias for `funcall`, then write a simple
-`item` parser that returns the first character of a string where possible and
+`@item` parser that returns the first character of a string where possible and
 returns an empty list when it isn't.
 ------------------------------------------------------------------------------|#
 
@@ -44,7 +44,7 @@ returns an empty list when it isn't.
   "Applies a parser function to an input string"
   (funcall parser input))
 
-(defun item ()
+(defun @item ()
   "Parse the first character of a string"
   ;; This function returns a lambda to maintain consistent with many of the
   ;; compound parsers defined later — use `parse` to call it
@@ -112,11 +112,11 @@ returns an empty list when it isn't.
 ;;; Derived Primitives
 
 ;; (defun sat (predicate)
-;;   (>>= (item) (lambda (char) (if (funcall predicate char) (constant char) (nothing)))))
+;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (constant char) (nothing)))))
 
 (defun sat (predicate)
   (build-parser
-   (:bind char (item))
+   (:bind char (@item))
    (if (funcall predicate char)
        (:return char)
        (nothing))))
