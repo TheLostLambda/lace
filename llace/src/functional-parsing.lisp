@@ -20,7 +20,7 @@ set of functions needed to write a parser.
 
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle :llace/lazy)
-  (:export :parse :@item :>>= :>> :@return :nothing :either :zero-or-more
+  (:export :parse :@item :>>= :>> :@return :@nothing :either :zero-or-more
            :one-or-more :build-parser :sat :digit :lower :upper :letter
            :alphanum :is-char :is-string))
 (in-package :llace/functional-parsing)
@@ -77,10 +77,11 @@ returns an empty list when it isn't.
   (lambda (input) (acons value input nil)))
 
 ;; Also a name that needs a lot of work!
-(defun nothing ()
+(defun @nothing ()
   (constantly nil))
 
 ;; This is `<|>`, but that's an illegal symbol name!
+;; Extend this to work on any number of parsers!
 (deflazy either (parser-a parser-b)
   (lambda (input)
     (or (parse parser-a input)
@@ -111,14 +112,14 @@ returns an empty list when it isn't.
 ;;; Derived Primitives
 
 ;; (defun sat (predicate)
-;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (@return char) (nothing)))))
+;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (@return char) (@nothing)))))
 
 (defun sat (predicate)
   (build-parser
    (:bind char (@item))
    (if (funcall predicate char)
        (@return char)
-       (nothing))))
+       (@nothing))))
 
 (defun digit () (sat #'digit-char-p))
 (defun lower () (sat #'lower-case-p))

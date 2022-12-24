@@ -31,9 +31,9 @@
   (is equal '((42 . "")) (parse (@return 42) ""))
   (is equal '((42 . "foo")) (parse (@return 42) "foo")))
 
-(define-test nothing
-  (is equal '() (parse (nothing) ""))
-  (is equal '() (parse (nothing) "foo")))
+(define-test @nothing
+  (is equal '() (parse (@nothing) ""))
+  (is equal '() (parse (@nothing) "foo")))
 
 (define-test either
   (let ((digit-or-item (either (digit) (@item))))
