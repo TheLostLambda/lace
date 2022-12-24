@@ -7,7 +7,8 @@
                "clazy")
   :components ((:module "src"
                 :components
-                ((:file "functional-parsing")
+                ((:file "lazy")
+                 (:file "functional-parsing")
                  (:file "parsing")
                  (:file "main"))))
   :description "An interpreter for the Lace language"

@@ -19,7 +19,7 @@ set of functions needed to write a parser.
 ------------------------------------------------------------------------------|#
 
 (defpackage llace/functional-parsing
-  (:use :cl :serapeum/bundle :clazy)
+  (:use :cl :serapeum/bundle :llace/lazy)
   (:export :parse :item :>>= :>> :constant :nothing :either :zero-or-more
            :one-or-more :build-parser :sat :digit :lower :upper :letter
            :alphanum :is-char :is-string))
@@ -68,7 +68,7 @@ returns an empty list when it isn't.
      (parse parser input))))
 
 ;; This will likely need to be made lazy at some point too!
-(defun >> (parser-a parser-b)
+(deflazy >> (parser-a parser-b)
   (>>= parser-a (constantly parser-b)))
 
 ;; This is the same as `return` but doesn't clash with the name
@@ -81,7 +81,7 @@ returns an empty list when it isn't.
   (constantly nil))
 
 ;; This is `<|>`, but that's an illegal symbol name!
-(defun either (parser-a parser-b)
+(deflazy either (parser-a parser-b)
   (lambda (input)
     (or (parse parser-a input)
         (parse parser-b input))))
@@ -105,7 +105,7 @@ returns an empty list when it isn't.
   (let ((body (reverse (subst 'constant :return body))))
     (reduce (lambda (body expr)
               (case (car expr)
-                (:bind `(call '>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
+                (:bind `(>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
                 (otherwise `(>> ,expr ,body))))
             body)))
 
