@@ -87,17 +87,17 @@
   (is equal '() (parse (@upper) "abc"))
   (is equal '((#\A . "BCabc")) (parse (@upper) "ABCabc")))
 
-(define-test letter
-  (is equal '() (parse (letter) ""))
-  (is equal '() (parse (letter) "1"))
-  (is equal '((#\a . "")) (parse (letter) "a"))
-  (is equal '((#\A . "")) (parse (letter) "A"))
-  (is equal '() (parse (letter) "123"))
-  (is equal '((#\a . "bc")) (parse (letter) "abc"))
-  (is equal '((#\A . "BC")) (parse (letter) "ABC"))
-  (is equal '() (parse (letter) "123abc"))
-  (is equal '((#\a . "bc123")) (parse (letter) "abc123"))
-  (is equal '((#\A . "BC123")) (parse (letter) "ABC123")))
+(define-test @letter
+  (is equal '() (parse (@letter) ""))
+  (is equal '() (parse (@letter) "1"))
+  (is equal '((#\a . "")) (parse (@letter) "a"))
+  (is equal '((#\A . "")) (parse (@letter) "A"))
+  (is equal '() (parse (@letter) "123"))
+  (is equal '((#\a . "bc")) (parse (@letter) "abc"))
+  (is equal '((#\A . "BC")) (parse (@letter) "ABC"))
+  (is equal '() (parse (@letter) "123abc"))
+  (is equal '((#\a . "bc123")) (parse (@letter) "abc123"))
+  (is equal '((#\A . "BC123")) (parse (@letter) "ABC123")))
 
 (define-test alphanum
   (is equal '() (parse (alphanum) ""))
