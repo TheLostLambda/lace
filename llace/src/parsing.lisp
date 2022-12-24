@@ -6,12 +6,12 @@
 ;;; Just playing around
 
 (defun nat ()
-  (build-parser
+  (parser
     (:bind xs (@one-or-more (digit)))
     (@return (parse-integer (coerce xs 'string)))))
 
 (defun int ()
-  (either (build-parser
+  (either (parser
             (is-char #\-)
             (:bind n (nat))
             (@return (- n)))
@@ -19,7 +19,7 @@
 
 ;; Use whitespacep from serapeum!
 (defun spacing ()
-  (build-parser
+  (parser
     (@zero-or-more (either (is-char #\Space) (is-char #\Tab)))
     (@return nil)))
 
@@ -27,7 +27,7 @@
 ;; Make that `@one-or-more` match this choice! All zero argument parsers should
 ;; be variables instead of functions?
 (defun token (parser)
-  (build-parser
+  (parser
     (spacing)
     (:bind token parser)
     (spacing)
@@ -45,7 +45,7 @@
 ;; factor ::= (expr) | int
 
 (defun expr ()
-  (either (build-parser
+  (either (parser
             (:bind x (term))
             (a-character #\+)
             (:bind y (expr))
@@ -53,7 +53,7 @@
           (term)))
 
 (defun term ()
-  (either (build-parser
+  (either (parser
             (:bind x (factor))
             (a-character #\*)
             (:bind y (term))
@@ -61,7 +61,7 @@
           (factor)))
 
 (defun factor ()
-  (either (build-parser
+  (either (parser
             (a-character #\()
             (:bind x (expr))
             (a-character #\))

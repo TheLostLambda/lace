@@ -21,7 +21,7 @@ set of functions needed to write a parser.
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle :llace/lazy)
   (:export :parse :@item :>>= :>> :@return :@nothing :either :@zero-or-more
-           :@one-or-more :build-parser :sat :digit :lower :upper :letter
+           :@one-or-more :parser :digit :lower :upper :letter
            :alphanum :is-char :is-string))
 (in-package :llace/functional-parsing)
 
@@ -102,7 +102,7 @@ returns an empty list when it isn't.
       (when (caar result)
           result))))
 
-(defmacro build-parser (&body body)
+(defmacro parser (&body body)
   (reduce (lambda (body expr)
             (case (car expr)
               (:bind `(>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
@@ -115,7 +115,7 @@ returns an empty list when it isn't.
 ;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (@return char) (@nothing)))))
 
 (defun sat (predicate)
-  (build-parser
+  (parser
    (:bind char (@item))
    (if (funcall predicate char)
        (@return char)
@@ -134,7 +134,7 @@ returns an empty list when it isn't.
 (defun is-string (string)
   (if (string= "" string)
       (@return nil)
-      (build-parser
+      (parser
         (is-char (char string 0))
         (is-string (subseq string 1))
         (@return string))))
