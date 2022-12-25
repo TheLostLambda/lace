@@ -40,23 +40,23 @@
 
 ;;; Parsing and evaluating maths!
 
-;; @expr ::= term + @expr | term
-;; term ::= factor * term | factor
+;; @expr ::= @term + @expr | @term
+;; @term ::= factor * @term | factor
 ;; factor ::= (@expr) | @integer
 
 (defun @expr ()
   (either (parser
-            (:bind x (term))
+            (:bind x (@term))
             (@tchar #\+)
             (:bind y (@expr))
             (@return (+ x y)))
-          (term)))
+          (@term)))
 
-(defun term ()
+(defun @term ()
   (either (parser
             (:bind x (factor))
             (@tchar #\*)
-            (:bind y (term))
+            (:bind y (@term))
             (@return (* x y)))
           (factor)))
 
