@@ -3,12 +3,10 @@
   :author "Brooks J Rady"
   :license "AGPLv3"
   :serial t
-  :depends-on ("serapeum"
-               "clazy")
+  :depends-on ("serapeum")
   :components ((:module "src"
                 :components
-                ((:file "lazy")
-                 (:file "functional-parsing")
+                ((:file "functional-parsing")
                  (:file "parsing")
                  (:file "main"))))
   :description "An interpreter for the Lace language"

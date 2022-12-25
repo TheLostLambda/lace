@@ -19,7 +19,7 @@ set of functions needed to write a parser.
 ------------------------------------------------------------------------------|#
 
 (defpackage llace/functional-parsing
-  (:use :cl :serapeum/bundle :llace/lazy)
+  (:use :cl :serapeum/bundle)
   (:export :parse :@item :>>= :>> :@return :@nothing :either :@zero-or-more
            :@one-or-more :parser :@digit :@lower :@upper :@letter :@alphanum
            :@char :@string))
@@ -59,17 +59,17 @@ returns an empty list when it isn't.
 ;; Need to implement: >>, >>=, return, empty, <|>, some, many
 
 ;; Need to test this on nil, single-parse, and multi-parse cases!
-(deflazy >>= (parser f)
-  (lambda (input)
-    (mapcan
-     (lambda (pair)
-       (destructuring-bind (parsed . unparsed) pair
-         (parse (funcall f parsed) unparsed)))
-     (parse parser input))))
+(defmacro >>= (parser f)
+  `(lambda (input)
+     (mapcan
+      (lambda (pair)
+        (destructuring-bind (parsed . unparsed) pair
+          (parse (funcall ,f parsed) unparsed)))
+      (parse ,parser input))))
 
 ;; This will likely need to be made lazy at some point too!
-(deflazy >> (parser-a parser-b)
-  (>>= parser-a (constantly parser-b)))
+(defmacro >> (parser-a parser-b)
+  `(>>= ,parser-a (constantly ,parser-b)))
 
 ;; This is the same as `return` but doesn't clash with the name
 ;; I should consider renaming this or getting around the package lock!
