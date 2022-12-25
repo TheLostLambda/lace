@@ -59,17 +59,17 @@
   (is equal '((-123 . "abc")) (parse (llace/parsing::@tinteger) "    -123	abc"))
   (is equal '() (parse (llace/parsing::@tinteger) "abc123")))
 
-(define-test a-character
-  (is equal '() (parse (llace/parsing::a-character #\-) ""))
-  (is equal '() (parse (llace/parsing::a-character #\-) "1"))
-  (is equal '() (parse (llace/parsing::a-character #\-) "a"))
-  (is equal '() (parse (llace/parsing::a-character #\-) "_"))
-  (is equal '((#\- . "")) (parse (llace/parsing::a-character #\-) "-"))
-  (is equal '((#\- . "")) (parse (llace/parsing::a-character #\-) "	 - 	"))
-  (is equal '((#\- . "1")) (parse (llace/parsing::a-character #\-) "-1"))
-  (is equal '((#\- . "1")) (parse (llace/parsing::a-character #\-) "	-   1"))
-  (is equal '((#\- . "123")) (parse (llace/parsing::a-character #\-) "-123"))
-  (is equal '((#\- . "123")) (parse (llace/parsing::a-character #\-) " -	123")))
+(define-test @tchar
+  (is equal '() (parse (llace/parsing::@tchar #\-) ""))
+  (is equal '() (parse (llace/parsing::@tchar #\-) "1"))
+  (is equal '() (parse (llace/parsing::@tchar #\-) "a"))
+  (is equal '() (parse (llace/parsing::@tchar #\-) "_"))
+  (is equal '((#\- . "")) (parse (llace/parsing::@tchar #\-) "-"))
+  (is equal '((#\- . "")) (parse (llace/parsing::@tchar #\-) "	 - 	"))
+  (is equal '((#\- . "1")) (parse (llace/parsing::@tchar #\-) "-1"))
+  (is equal '((#\- . "1")) (parse (llace/parsing::@tchar #\-) "	-   1"))
+  (is equal '((#\- . "123")) (parse (llace/parsing::@tchar #\-) "-123"))
+  (is equal '((#\- . "123")) (parse (llace/parsing::@tchar #\-) " -	123")))
 
 (define-test a-symbol
   (is equal '() (parse (llace/parsing::a-symbol "let") ""))

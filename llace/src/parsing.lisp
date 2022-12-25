@@ -35,7 +35,7 @@
 
 (defun @tnatural () (@token (@natural)))
 (defun @tinteger () (@token (@integer)))
-(defun a-character (c) (@token (@char c)))
+(defun @tchar (c) (@token (@char c)))
 (defun a-symbol (s) (@token (@string s)))
 
 ;;; Parsing and evaluating maths!
@@ -47,7 +47,7 @@
 (defun expr ()
   (either (parser
             (:bind x (term))
-            (a-character #\+)
+            (@tchar #\+)
             (:bind y (expr))
             (@return (+ x y)))
           (term)))
@@ -55,15 +55,15 @@
 (defun term ()
   (either (parser
             (:bind x (factor))
-            (a-character #\*)
+            (@tchar #\*)
             (:bind y (term))
             (@return (* x y)))
           (factor)))
 
 (defun factor ()
   (either (parser
-            (a-character #\()
+            (@tchar #\()
             (:bind x (expr))
-            (a-character #\))
+            (@tchar #\))
             (@return x))
           (@tinteger)))
