@@ -41,8 +41,8 @@
 ;;; Parsing and evaluating maths!
 
 ;; @expr ::= @term + @expr | @term
-;; @term ::= factor * @term | factor
-;; factor ::= (@expr) | @integer
+;; @term ::= @factor * @term | @factor
+;; @factor ::= (@expr) | @integer
 
 (defun @expr ()
   (either (parser
@@ -54,13 +54,13 @@
 
 (defun @term ()
   (either (parser
-            (:bind x (factor))
+            (:bind x (@factor))
             (@tchar #\*)
             (:bind y (@term))
             (@return (* x y)))
-          (factor)))
+          (@factor)))
 
-(defun factor ()
+(defun @factor ()
   (either (parser
             (@tchar #\()
             (:bind x (@expr))
