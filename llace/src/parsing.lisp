@@ -1,5 +1,5 @@
 (defpackage llace/parsing
-  (:use :cl :llace/functional-parsing)
+  (:use :cl :serapeum/bundle :llace/functional-parsing)
   (:export :@expr))
 (in-package :llace/parsing)
 

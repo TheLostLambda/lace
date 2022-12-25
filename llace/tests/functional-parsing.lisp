@@ -43,7 +43,8 @@
     (is equal '((#\b . "4")) (parse digit-or-item "b4"))
     (is equal '((#\4 . "a")) (parse digit-or-item "4a"))
     (is equal '((#\4 . "abc")) (parse digit-or-item "4abc"))
-    (finish (parse (either (@item) (loop)) "1"))))
+    (finish (parse (either (@digit) (loop)) "1"))
+    (finish (parse (either (@digit) (@letter) (loop)) "a"))))
 
 (define-test @zero-or-more
   (let ((maybe-some-digits (@zero-or-more (@digit))))

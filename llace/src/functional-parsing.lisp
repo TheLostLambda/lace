@@ -81,11 +81,9 @@ returns an empty list when it isn't.
   (constantly nil))
 
 ;; This is `<|>`, but that's an illegal symbol name!
-;; Extend this to work on any number of parsers!
-(deflazy either (parser-a parser-b)
-  (lambda (input)
-    (or (parse parser-a input)
-        (parse parser-b input))))
+(defmacro either (&rest parsers)
+  `(lambda (input)
+     (or ,@(mapcar (op (list 'parse _ 'input)) parsers))))
 
 ;; This is `some`, but with a WIP name that doesn't clash
 (defun @zero-or-more (parser)
@@ -110,9 +108,6 @@ returns an empty list when it isn't.
           (reverse body)))
 
 ;;; Derived Primitives
-
-;; (defun @satisfies (predicate)
-;;   (>>= (@item) (lambda (char) (if (funcall predicate char) (@return char) (@nothing)))))
 
 (defun @satisfies (predicate)
   (parser
