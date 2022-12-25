@@ -23,20 +23,20 @@
     (@zero-or-more (either (@char #\Space) (@char #\Tab)))
     (@return nil)))
 
-;; Need to pick between `(token (@integer))` and `(token #'@integer)`
+;; Need to pick between `(@token (@integer))` and `(@token #'@integer)`
 ;; Make that `@one-or-more` match this choice! All zero argument parsers should
 ;; be variables instead of functions?
-(defun token (parser)
+(defun @token (parser)
   (parser
     (@spacing)
     (:bind token parser)
     (@spacing)
     (@return token)))
 
-(defun @tnatural () (token (@natural)))
-(defun @tinteger () (token (@integer)))
-(defun a-character (c) (token (@char c)))
-(defun a-symbol (s) (token (@string s)))
+(defun @tnatural () (@token (@natural)))
+(defun @tinteger () (@token (@integer)))
+(defun a-character (c) (@token (@char c)))
+(defun a-symbol (s) (@token (@string s)))
 
 ;;; Parsing and evaluating maths!
 
