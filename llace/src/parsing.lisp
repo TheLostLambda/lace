@@ -1,6 +1,6 @@
 (defpackage llace/parsing
   (:use :cl :llace/functional-parsing)
-  (:export :expr))
+  (:export :@expr))
 (in-package :llace/parsing)
 
 ;;; Just playing around
@@ -40,15 +40,15 @@
 
 ;;; Parsing and evaluating maths!
 
-;; expr ::= term + expr | term
+;; @expr ::= term + @expr | term
 ;; term ::= factor * term | factor
-;; factor ::= (expr) | @integer
+;; factor ::= (@expr) | @integer
 
-(defun expr ()
+(defun @expr ()
   (either (parser
             (:bind x (term))
             (@tchar #\+)
-            (:bind y (expr))
+            (:bind y (@expr))
             (@return (+ x y)))
           (term)))
 
@@ -63,7 +63,7 @@
 (defun factor ()
   (either (parser
             (@tchar #\()
-            (:bind x (expr))
+            (:bind x (@expr))
             (@tchar #\))
             (@return x))
           (@tinteger)))
