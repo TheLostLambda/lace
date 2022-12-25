@@ -36,7 +36,7 @@
 (defun @tnatural () (@token (@natural)))
 (defun @tinteger () (@token (@integer)))
 (defun @tchar (c) (@token (@char c)))
-(defun a-symbol (s) (@token (@string s)))
+(defun @tstring (s) (@token (@string s)))
 
 ;;; Parsing and evaluating maths!
 

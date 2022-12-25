@@ -71,17 +71,17 @@
   (is equal '((#\- . "123")) (parse (llace/parsing::@tchar #\-) "-123"))
   (is equal '((#\- . "123")) (parse (llace/parsing::@tchar #\-) " -	123")))
 
-(define-test a-symbol
-  (is equal '() (parse (llace/parsing::a-symbol "let") ""))
-  (is equal '() (parse (llace/parsing::a-symbol "let") "l"))
-  (is equal '() (parse (llace/parsing::a-symbol "let") "le"))
-  (is equal '(("let" . "")) (parse (llace/parsing::a-symbol "let") "let"))
-  (is equal '(("let" . "")) (parse (llace/parsing::a-symbol "let") "  	let 	"))
-  (is equal '() (parse (llace/parsing::a-symbol "let") "leet"))
-  (is equal '(("let" . "me")) (parse (llace/parsing::a-symbol "let") "letme"))
-  (is equal '(("let" . "me")) (parse (llace/parsing::a-symbol "let") " 	let  me"))
-  (is equal '(("let" . "x = 42;")) (parse (llace/parsing::a-symbol "let") "let x = 42;"))
-  (is equal '(("let" . "x = 42;")) (parse (llace/parsing::a-symbol "let") "	let  x = 42;")))
+(define-test @tstring
+  (is equal '() (parse (llace/parsing::@tstring "let") ""))
+  (is equal '() (parse (llace/parsing::@tstring "let") "l"))
+  (is equal '() (parse (llace/parsing::@tstring "let") "le"))
+  (is equal '(("let" . "")) (parse (llace/parsing::@tstring "let") "let"))
+  (is equal '(("let" . "")) (parse (llace/parsing::@tstring "let") "  	let 	"))
+  (is equal '() (parse (llace/parsing::@tstring "let") "leet"))
+  (is equal '(("let" . "me")) (parse (llace/parsing::@tstring "let") "letme"))
+  (is equal '(("let" . "me")) (parse (llace/parsing::@tstring "let") " 	let  me"))
+  (is equal '(("let" . "x = 42;")) (parse (llace/parsing::@tstring "let") "let x = 42;"))
+  (is equal '(("let" . "x = 42;")) (parse (llace/parsing::@tstring "let") "	let  x = 42;")))
 
 (define-test expr
   (is equal '((4 . "")) (parse (expr) "2 + 2"))
