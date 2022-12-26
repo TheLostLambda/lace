@@ -79,9 +79,9 @@ Returns VALUE in the parse position and propagates the input unchanged."
   (constantly nil))
 
 #|------------------------------------------------------------------------------
-Now that we have a few core primitives defined, we can starting thinking about
-how they can be combined and repeated to form more complex parsers. We'll start
-by defining some basic repetition combinators.
+Now that we have a few core primitives defined, we can start thinking about how
+they can be repeated and combined to form more complex parsers. We'll start by
+defining some basic repetition combinators.
 
 The `@zero-or-more` parser takes another parser as an argument and repetitively
 applies it to an input — greedily consuming as much input as possible and
@@ -103,29 +103,29 @@ values in the order they appear; otherwise, still return a successful parse but
 containing only an empty list."
   ;; Start by defining a recursive function that will repetitively apply PARSER
   ;; to the INPUT and collect a list of parsed values in PARSED
-  (labels ((self (input parsed)
+  (labels ((self (input parsed-values)
              ;; Attempt to parse part of the input and map over the results,
              ;; flattening into a single list of parse results
              (or (mapcan (lambda (result)
                            ;; For each parse result, recurse with the unparsed
-                           ;; input `(cdr result)` as the new input and the
-                           ;; parsed value `(car result)` consed to the list of
+                           ;; input and the parsed value consed to the list of
                            ;; previously parsed values
-                           (self (cdr result) (cons (car result) parsed)))
+                           (destructuring-bind (parsed . unparsed) result
+                             (self unparsed (cons parsed parsed-values))))
                          (parse parser input))
                  ;; If there were no parse results to map over, simply return
-                 ;; the collected results (reversed so they appear in the same
-                 ;; order as in the input string) and the remaining input
-                 (acons (reverse parsed) input nil))))
+                 ;; the collected results (reversed so that they appear in the
+                 ;; same order as in the input string) and the remaining input
+                 (acons (reverse parsed-values) input nil))))
     ;; Return a lambda that wraps this `self` function, calling it with the
-    ;; appropriate input and an empty initial list of parsed results
+    ;; appropriate input and an empty initial list of parsed values
     (lambda (input) (self input nil))))
 
 (defun @one-or-more (parser)
   "Applies PARSER to an input one or more times.
 
 Like @ZERO-OR-MORE but fails when no values can be parsed from the input."
-  ;; Construct a lambda representing the parser
+  ;; Construct a lambda representing the new parser
   (lambda (input)
     ;; Use `@zero-or-more` to parse some number of values, storing the result
     (let ((result (parse (@zero-or-more parser) input)))
@@ -135,22 +135,87 @@ Like @ZERO-OR-MORE but fails when no values can be parsed from the input."
       (when (caar result)
           result))))
 
-;;; DIRTY WORK BELOW!
+#|------------------------------------------------------------------------------
+Now that repetition is out of the way, we need a way to chain parsers together
+and work with their outputs. The bind operator — `>>=` — allows for this
+chaining and is what makes these functional parsers monadic.
+
+The `>>=` combinator takes a parser that parses some value from the input, and a
+function that takes that value and returns a new parser using it. This allows
+the original parser and the one returned by the passed function to be chained
+together (consuming the same input) but with the second, newly constructed
+parser being aware of what the first parser found. If the first parser fails,
+then the second parser-constructing function is never called (since there is no
+parsed value to call the function with).
+
+Importantly, this combinator must be lazy; that is, its second function argument
+should not be evaluated until it's known that the first parser succeeds. This
+allows for recursive parser definitions that don't result in infinite recursion
+before any input is supplied. Common Lisp, unlike Haskell, is a strict language
+that always evaluates a function's arguments before it is called. To get around
+this eager evaluation, `>>=` and friends are macros that do not automatically
+evaluate their arguments. This serves as an analogue for true lazy evaluation
+and makes the definition of self-recursive parsers possible. Though these macros
+return parser lambdas, they don't adopt the standard `@` prefix to differentiate
+them from true functions that can be called at runtime.
+
+The `>>` combinator chains parsers just like `>>=`, but doesn't propagate the
+first parser's return value. Instead, it simply takes two preexisting parsers,
+runs them one after another, and discards the result of the first.
+------------------------------------------------------------------------------|#
+
 (defmacro >>= (parser f)
+  "Applies PARSER to an input and, if parsing succeeds, calls F with the parsed
+value to generate a new parser that is chained after the first.
+
+This is a lazy version of the monadic bind operator."
+  ;; Construct a quoted lambda representing the new parser
   `(lambda (input)
+     ;; Attempt to parse the input and map over parse results, flattening them
+     ;; into a single list
      (mapcan
-      (lambda (pair)
-        (destructuring-bind (parsed . unparsed) pair
+      (lambda (result)
+        ;; For each result, call f with the parsed value and apply the resultant
+        ;; parser to what's left of the input
+        (destructuring-bind (parsed . unparsed) result
           (parse (funcall ,f parsed) unparsed)))
       (parse ,parser input))))
 
 (defmacro >> (parser-a parser-b)
+  "Chains PARSER-A and PARSER-B, discarding the output of PARSER-A.
+
+This combinator is lazy so PARSER-B is never evaluated if parsing with PARSER-A
+fails."
+  ;; Reuse the definition of `>>=` for chaining, but use `constantly` to discard
+  ;; the result of parser-a
   `(>>= ,parser-a (constantly ,parser-b)))
 
+#|------------------------------------------------------------------------------
+In addition to repeating and chaining parsers, it's useful to attempt several
+different parses on the same input before giving up. The `either` combinator
+takes any number of parsers and applies them one after the other to a particular
+input. Once one of these parsing attempts succeeds, `either` short-circuits and
+immediately returns the parsed value.
+
+Like the `>>=` and `>>` combinators, `either` is lazy so its arguments aren't
+evaluated unless all of the proceeding parsers have failed. This combinator is
+essentially just the `or` macro wrapped in a lambda and with each of its
+arguments applied to the same input by `parse`.
+------------------------------------------------------------------------------|#
+
 (defmacro either (&rest parsers)
+  "Attempts parsing an input with each parser in PARSERS, returning the first
+successful result.
+
+This combinator is short-circuiting, so a parser is only run if all of the
+parsers before it have failed to return a result."
+  ;; Construct a quoted lambda representing the new parser
   `(lambda (input)
+     ;; Map through parsers, wrapping each in a call to `parse` before splicing
+     ;; the resultant list into the `or` macro for short-circuit evaluation
      (or ,@(mapcar (op (list 'parse _ 'input)) parsers))))
 
+;;; DIRTY WORK BELOW!
 (defmacro parser (&body body)
   (reduce (lambda (body expr)
             (case (car expr)
@@ -173,7 +238,6 @@ Like @ZERO-OR-MORE but fails when no values can be parsed from the input."
 (defun @letter () (@satisfies #'alpha-char-p))
 (defun @alphanum () (@satisfies #'alphanumericp))
 
-;; Ugh... Naming...
 (defun @char (char)
   (@satisfies (lambda (c) (char-equal char c))))
 
