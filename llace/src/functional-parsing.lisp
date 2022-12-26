@@ -20,9 +20,9 @@ set of functions needed to write a parser.
 
 (defpackage llace/functional-parsing
   (:use :cl :serapeum/bundle)
-  (:export :parse :@item :>>= :>> :@return :@nothing :either :@zero-or-more
-           :@one-or-more :parser :@digit :@lower :@upper :@letter :@alphanum
-           :@char :@string))
+  (:export :parse :@item :@return :@nothing :@zero-or-more :@one-or-more :>>=
+           :>> :either :parser :@satisfies :@digit :@lower :@upper :@letter
+           :@alphanum :@char :@string))
 (in-package :llace/functional-parsing)
 
 #|------------------------------------------------------------------------------
@@ -37,15 +37,17 @@ containing several partially parsed forms) to be encoded.
 
 To start, let's define `parse` as an alias for `funcall`, then write a simple
 `@item` parser that returns the first character of a string where possible and
-returns an empty list when it isn't.
+returns an empty list when it isn't. As a matter of convention, all parser names
+are prefixed with `@` — this prevents their names from clashing with a number of
+existing Common Lisp primitives and definitions.
 ------------------------------------------------------------------------------|#
 
 (defun parse (parser input)
-  "Applies a parser function to an input string"
+  "Applies a PARSER function to an INPUT string."
   (funcall parser input))
 
 (defun @item ()
-  "Parse the first character of a string"
+  "Parse the first character of a string."
   ;; This function returns a lambda to maintain consistent with many of the
   ;; compound parsers defined later — use `parse` to call it
   (lambda (input)
@@ -55,10 +57,85 @@ returns an empty list when it isn't.
          ;; character and the remaining substring
          (acons (char input 0) (subseq input 1) nil)))) 
 
-;;; DIRTY WORK BELOW!
-;; Need to implement: >>, >>=, return, empty, <|>, some, many
+#|------------------------------------------------------------------------------
+Though the `@item` parser is the primary building block with which other parsers
+are built, it's helpful to have a few other primitives. The first of these is
+`@return`, which consumes none of its input and "parses" a constant value. This
+parser "lifts" an arbitrary value into the parser monad.
 
-;; Need to test this on nil, single-parse, and multi-parse cases!
+An even simpler primitive is the `@nothing` parser, which fails to parse any
+input and always returns an empty list.
+------------------------------------------------------------------------------|#
+
+(defun @return (value)
+  "Lifts a value into the parser monad.
+
+Returns VALUE in the parse position and propagates the input unchanged."
+  ;; Construct a lambda that always returns `((value . input))`
+  (lambda (input) (acons value input nil)))
+
+(defun @nothing ()
+  "A parser that always fails, returning NIL regardless of its input."
+  (constantly nil))
+
+#|------------------------------------------------------------------------------
+Now that we have a few core primitives defined, we can starting thinking about
+how they can be combined and repeated to form more complex parsers. We'll start
+by defining some basic repetition combinators.
+
+The `@zero-or-more` parser takes another parser as an argument and repetitively
+applies it to an input — greedily consuming as much input as possible and
+collecting the parsed characters into a list. When the supplied parser cannot
+parse anything from the input, parsing by `@zero-or-more` still succeeds but
+returns an empty list (i.e. `((() . input))`).
+
+The `@one-or-more` parser behaves exactly like `@zero-or-more` except for the
+case in which nothing can be parsed from the input. In this case, instead of the
+parse succeeding and returning an empty list, the whole parse fails. In terms of
+regular expressions, `@zero-or-more` acts like `*` and `@one-or-more` like `+`.
+------------------------------------------------------------------------------|#
+
+(defun @zero-or-more (parser)
+  "Applies PARSER to an input zero or more times.
+
+If PARSER can parse the input given, collect and return a list of all parsed
+values in the order they appear; otherwise, still return a successful parse but
+containing only an empty list."
+  ;; Start by defining a recursive function that will repetitively apply PARSER
+  ;; to the INPUT and collect a list of parsed values in PARSED
+  (labels ((self (input parsed)
+             ;; Attempt to parse part of the input and map over the results,
+             ;; flattening into a single list of parse results
+             (or (mapcan (lambda (result)
+                           ;; For each parse result, recurse with the unparsed
+                           ;; input `(cdr result)` as the new input and the
+                           ;; parsed value `(car result)` consed to the list of
+                           ;; previously parsed values
+                           (self (cdr result) (cons (car result) parsed)))
+                         (parse parser input))
+                 ;; If there were no parse results to map over, simply return
+                 ;; the collected results (reversed so they appear in the same
+                 ;; order as in the input string) and the remaining input
+                 (acons (reverse parsed) input nil))))
+    ;; Return a lambda that wraps this `self` function, calling it with the
+    ;; appropriate input and an empty initial list of parsed results
+    (lambda (input) (self input nil))))
+
+(defun @one-or-more (parser)
+  "Applies PARSER to an input one or more times.
+
+Like @ZERO-OR-MORE but fails when no values can be parsed from the input."
+  ;; Construct a lambda representing the parser
+  (lambda (input)
+    ;; Use `@zero-or-more` to parse some number of values, storing the result
+    (let ((result (parse (@zero-or-more parser) input)))
+      ;; When the list of parsed values is non-empty, return the result computed
+      ;; by `@zero-or-more` as-is; otherwise, the parse fails and the empty list
+      ;; is returned by default.
+      (when (caar result)
+          result))))
+
+;;; DIRTY WORK BELOW!
 (defmacro >>= (parser f)
   `(lambda (input)
      (mapcan
@@ -67,38 +144,12 @@ returns an empty list when it isn't.
           (parse (funcall ,f parsed) unparsed)))
       (parse ,parser input))))
 
-;; This will likely need to be made lazy at some point too!
 (defmacro >> (parser-a parser-b)
   `(>>= ,parser-a (constantly ,parser-b)))
 
-;; This is the same as `return` but doesn't clash with the name
-;; I should consider renaming this or getting around the package lock!
-(defun @return (value)
-  (lambda (input) (acons value input nil)))
-
-;; Also a name that needs a lot of work!
-(defun @nothing ()
-  (constantly nil))
-
-;; This is `<|>`, but that's an illegal symbol name!
 (defmacro either (&rest parsers)
   `(lambda (input)
      (or ,@(mapcar (op (list 'parse _ 'input)) parsers))))
-
-;; This is `some`, but with a WIP name that doesn't clash
-(defun @zero-or-more (parser)
-  (labels ((self (input parsed)
-             (let ((result (parse parser input)))
-               (if result
-                   (self (cdar result) (cons (caar result) parsed))
-                   (acons (reverse parsed) input nil)))))
-    (lambda (input) (self input nil))))
-
-(defun @one-or-more (parser)
-  (lambda (input)
-    (let ((result (parse (@zero-or-more parser) input)))
-      (when (caar result)
-          result))))
 
 (defmacro parser (&body body)
   (reduce (lambda (body expr)

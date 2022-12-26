@@ -3,6 +3,22 @@
   (:shadowing-import-from :parachute :true))
 (in-package :llace/tests/functional-parsing)
 
+;;; Helper Parsers -------------------------------------------------------------
+
+(defun @pangram (string)
+  (lambda (input)
+    (let ((result (parse (@string string) input)))
+      (when result
+        `((,(caar result) . ,(cdar result))
+          (,(reverse (caar result)) . ,(cdar result)))))))
+
+(defun @upper-pangrams (string)
+  (parser
+    (:bind key (@zero-or-more (@pangram string)))
+    (@return (mapcar #'string-upcase key))))
+
+;;; Unit Tests -----------------------------------------------------------------
+
 (define-test @item
   (is equal '() (parse (@item) ""))
   (is equal '((#\s . "up")) (parse (@item) "sup")))
@@ -129,3 +145,20 @@
   (is equal '() (parse (@string "let") "leet"))
   (is equal '(("let" . "me")) (parse (@string "let") "letme"))
   (is equal '(("let" . " x = 42;")) (parse (@string "let") "let x = 42;")))
+
+(define-test @pangram
+  (is equal '() (parse (@pangram "let") "le"))
+  (is equal '(("let" . " x") ("tel" . " x")) (parse (@pangram "let") "let x"))
+  (is equal '((("let" "let") . " x") (("let" "tel") . " x")
+              (("tel" "let") . " x") (("tel" "tel") . " x"))
+      (parse (@zero-or-more (@pangram "let")) "letlet x"))
+  (is equal '((("let" "let" "let") . " x") (("let" "let" "tel") . " x")
+              (("let" "tel" "let") . " x") (("let" "tel" "tel") . " x")
+              (("tel" "let" "let") . " x") (("tel" "let" "tel") . " x")
+              (("tel" "tel" "let") . " x") (("tel" "tel" "tel") . " x"))
+      (parse (@zero-or-more (@pangram "let")) "letletlet x"))
+  (is equal '((("LET" "LET" "LET") . " x") (("LET" "LET" "TEL") . " x")
+              (("LET" "TEL" "LET") . " x") (("LET" "TEL" "TEL") . " x")
+              (("TEL" "LET" "LET") . " x") (("TEL" "LET" "TEL") . " x")
+              (("TEL" "TEL" "LET") . " x") (("TEL" "TEL" "TEL") . " x"))
+      (parse (@upper-pangrams "let") "letletlet x")))
