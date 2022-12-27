@@ -106,13 +106,13 @@ containing only an empty list."
   (labels ((self (input parsed-values)
              ;; Attempt to parse part of the input and map over the results,
              ;; flattening into a single list of parse results
-             (or (mapcan (lambda (result)
-                           ;; For each parse result, recurse with the unparsed
-                           ;; input and the parsed value consed to the list of
-                           ;; previously parsed values
-                           (destructuring-bind (parsed . unparsed) result
-                             (self unparsed (cons parsed parsed-values))))
-                         (parse parser input))
+             (or (mapcan
+                  (op (destructuring-bind (parsed . unparsed) _
+                        ;; For each parse result, recurse with the unparsed
+                        ;; input and the parsed value consed to the list of
+                        ;; previously parsed values
+                        (self unparsed (cons parsed parsed-values))))
+                  (parse parser input))
                  ;; If there were no parse results to map over, simply return
                  ;; the collected results (reversed so that they appear in the
                  ;; same order as in the input string) and the remaining input
@@ -174,11 +174,10 @@ This is a lazy version of the monadic bind operator."
      ;; Attempt to parse the input and map over parse results, flattening them
      ;; into a single list
      (mapcan
-      (lambda (result)
-        ;; For each result, call f with the parsed value and apply the resultant
-        ;; parser to what's left of the input
-        (destructuring-bind (parsed . unparsed) result
-          (parse (funcall ,f parsed) unparsed)))
+      (op (destructuring-bind (parsed . unparsed) _
+            ;; For each result, call f with the parsed value and apply the
+            ;; resultant parser to what's left of the input
+            (parse (funcall ,f parsed) unparsed)))
       (parse ,parser input))))
 
 (defmacro >> (parser-a parser-b)
@@ -215,35 +214,107 @@ parsers before it have failed to return a result."
      ;; the resultant list into the `or` macro for short-circuit evaluation
      (or ,@(mapcar (op (list 'parse _ 'input)) parsers))))
 
-;;; DIRTY WORK BELOW!
+#|------------------------------------------------------------------------------
+Fundamentally, we now have everything we need to write context-free functional
+parsers, but doing so may still be tedious! To chain more than two parsers, for
+example, the `>>=` and `>>` combinators need to be nested, and every additional
+parser added to the chain requires another level of nesting. As you can imagine,
+this results in increasingly hard-to-read code for all but the simplest parsers.
+
+To address this nesting issue, we can define a very small DSL and write a macro
+for converting this new parser language into a nested chain of `>>=` and `>>`
+calls that can be executed. By default, the `parser` macro chains its `&body`
+forms together using `>>`, but the special bind syntax — `(:bind foo (@item))` —
+uses `>>=` to set the value of `foo` to the parsed result of `(@item)` so that
+it can be recalled by parsers later in the chain. This results in a more
+imperative syntax that keeps complex multi-step parsers looking clean and
+abstracts away the unsightly nesting inherent to functional parsing.
+------------------------------------------------------------------------------|#
+
 (defmacro parser (&body body)
-  (reduce (lambda (body expr)
-            (case (car expr)
-              (:bind `(>>= ,(caddr expr) (lambda (,(cadr expr)) ,body)))
-              (otherwise `(>> ,expr ,body))))
+  "Define a parser chain that optionally contains :BIND statements.
+
+The BODY forms of this macro can be either expressions returning parsers or
+special :BIND statements — (:BIND FOO PARSER) — which assign the parsed value of
+PARSER to FOO for the remainder of the BODY. The result returned by the BODY's
+terminal form becomes the result of the entire parser chain."
+  ;; The binding combinators `>>=` and `>>` chain parsers from left to right,
+  ;; but `reduce` builds the parser chain from the inside out (right to
+  ;; left). For the order of parsers in the body to match the order of parsers
+  ;; in the resultant chain, `body` is reversed before the chain is constructed
+  (reduce (lambda (chain form)
+            ;; For each form in the body, check if it starts with `:bind`
+            (case (first form)
+              ;; If it does, then wrap the existing chain in a lambda and a call
+              ;; to `>>=` that passes the value parsed by `(third form)` into
+              ;; the rest of the chain
+              (:bind `(>>= ,(third form) (lambda (,(second form)) ,chain)))
+              ;; Otherwise, the form must be a parser and can be simply added to
+              ;; the beginning of the chain
+              (otherwise `(>> ,form ,chain))))
           (reverse body)))
 
-;;; Derived Primitives
+#|------------------------------------------------------------------------------
+That's it as far as primitives go! It's all of the syntax and functionality we
+need to build any context-free parser. With that being said, it would be nice to
+define a few more utility parsers here that will make building others easier
+down the line.
+
+The first of these derived parsers is `@satisfies`, which acts exactly like the
+`@item` parser but additionally checks that the parsed character satisfies the
+supplied predicate. We can then use `@satisfies` to build trivial parsers
+accepting digits, lowercase letters, uppercase letters, letters in general, and
+any alphanumeric character.
+------------------------------------------------------------------------------|#
 
 (defun @satisfies (predicate)
+  "Parse the first character of a string if it satisfies PREDICATE."
   (parser
-   (:bind char (@item))
-   (if (funcall predicate char)
-       (@return char)
-       (@nothing))))
+    ;; Parse a single character and bind it to `char`
+    (:bind char (@item))
+    ;; If it satisfies the predicate, return `char`; otherwise, return nothing
+    ;; (a parse failure)
+    (if (funcall predicate char)
+        (@return char)
+        (@nothing))))
 
-(defun @digit () (@satisfies #'digit-char-p))
-(defun @lower () (@satisfies #'lower-case-p))
-(defun @upper () (@satisfies #'upper-case-p))
-(defun @letter () (@satisfies #'alpha-char-p))
-(defun @alphanum () (@satisfies #'alphanumericp))
+(defun @digit ()
+  "Parse a single digit (0–9)."
+  (@satisfies #'digit-char-p))
+(defun @lower ()
+  "Parse a lowercase letter."
+  (@satisfies #'lower-case-p))
+(defun @upper ()
+  "Parse an uppercase letter."
+  (@satisfies #'upper-case-p))
+(defun @letter ()
+  "Parse any upper or lowercase letter."
+  (@satisfies #'alpha-char-p))
+(defun @alphanum ()
+  "Parse any alphanumeric character."
+  (@satisfies #'alphanumericp))
+
+#|------------------------------------------------------------------------------
+Finally it's often useful to look for particular characters or strings when
+parsing keywords. The `@char` parser builds on `@satisfies` to match a single
+character and `@string` builds on `@char` to match character strings.
+------------------------------------------------------------------------------|#
 
 (defun @char (char)
+  "Parse a single CHAR."
+  ;; Use `@satisfies` to look for a character equal to `char`
   (@satisfies (lambda (c) (char-equal char c))))
 
 (defun @string (string)
+  "Parse a STRING of characters."
+  ;; Check if `string` is empty
   (if (string= "" string)
+      ;; If it is, return nil (succeeding to parse, but without consuming any
+      ;; input or returning anything meaningful)
       (@return nil)
+      ;; Otherwise, check that the first character of `string` is present and
+      ;; then recurse, using `@string` to check that the remaining characters
+      ;; are also present. If they are, return the parsed string
       (parser
         (@char (char string 0))
         (@string (subseq string 1))
