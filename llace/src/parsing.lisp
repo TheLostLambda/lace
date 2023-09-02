@@ -17,15 +17,11 @@
             (@return (- n)))
           (@natural)))
 
-;; Use whitespacep from serapeum!
 (defun @spacing ()
   (parser
     (@zero-or-more (either (@char #\Space) (@char #\Tab)))
     (@return nil)))
 
-;; Need to pick between `(@token (@integer))` and `(@token #'@integer)`
-;; Make that `@one-or-more` match this choice! All zero argument parsers should
-;; be variables instead of functions?
 (defun @token (parser)
   (parser
     (@spacing)
@@ -42,7 +38,7 @@
 
 ;; @expr ::= @term + @expr | @term
 ;; @term ::= @factor * @term | @factor
-;; @factor ::= (@expr) | @integer
+;; @factor ::= (@expr) | @tinteger
 
 (defun @expr ()
   (either (parser
