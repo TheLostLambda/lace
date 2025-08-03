@@ -1,3 +1,35 @@
+;; 2025-08-03 Update
+
+main = println("Hello, Lace!")
+main = println(["Hello" "Lace!"] sep:", ")
+main = "Hello, Lace!" println
+main = ["Hello" "Lace!"] >| println(sep:", ")
+;; Maybe first item in pipeline is converted to a stream with the overridable,
+;; "magic" %to-stream function? Then some functions could have stream-specific
+;; versions? Like filter? Nah, just make %to-stream that "uncollect" operator
+;; and add it implicitly after the first item in a chain! That can be `|<`!
+filter(p? xs:List) = ; whatever
+filter(p? xs:Stream) = xs >| filter(p?) |<
+;; Where `>|` is the collect function that collects a `Stream` into something
+;; else like a `List`? `List` by default, probably!
+
+;; In reality though, I'd probably want a different implementation that's lazy
+;; and doesn't need to collect a whole stream before passing something through
+;; If `Item` is a predicate that returns true if a value has come from a stream
+filter(p? x:Item&p?) = x
+      (_  x:Item   ) = #nothing
+;; That passes `x` through the filter if it was a stream `Item` that satistifed
+;; the filter predicate `p?`, and returns `#nothing` (which is automatically
+;; removed / dropped from streams) otherwise
+
+;; All function application with `()` is partial application — functions with no
+;; arguments don't need `()` to call, just give their name like a variable
+
+;; How do I mix type specifiers / predicates and default values? Like this:
+filter(p? xs:List=[]) = ; whatever
+
+;; End 2025-08-03 Update =======================================================
+
 ;; This is a comment
 "This is a docstring?"
 main = "Hello, Lace!" >> stdout ; How do we add a newline?
