@@ -1,4 +1,252 @@
-;; 2025-08-03 Update
+;; 2025-10-25 Update ===========================================================
+
+;; Maybe the "collect" and "uncollect" operators would look better if I changed
+;; `>|` to `-<` and `|<` to `>-`? After all, there is no need to hold onto `|`
+;; if I'm planning on making all whitespace between expressions an implict pipe
+;; (which I do think would be nice)!
+main = "Hello, Lace!" println
+main = ["Hello" "Lace!"] -< println(sep:", ")
+;;
+;; Ugh, on second thought, I think I do prefer the `>|` — that makes it look
+;; like it's taking in a stream, then blocking it behind a sort of dam where
+;; it's collected. The `|<` looks like the dam is spraying out values through
+;; a nozzle!
+
+;; I think it's good to require a `main` entrypoint, so that the file can be
+;; treated as just a list of bindings (so that you can declare those bindings in
+;; any order). I think running the code line-by-line is awful and something to
+;; avoid! I want to reorder my functions freely!
+
+;; I'll need to think about how to make operators just normal functions that can
+;; be overridden. Haskell does this well, but you have to specify the operator
+;; precedence with a unique syntax? Should I have precedence at all? Or should
+;; I just force the use of brackets like Lisp?
+
+;; Perhaps I should use `{}` for overriding precedence (if it does exist), or in
+;; place of more `()` even if it doesn't? The `()` could be reserved for holding
+;; function parameters / arguments, `[]` could be for collections (lists and
+;; dicts), and `{}` could be for scoping / grouping expressions (like Gleam)?
+
+;; That `#nothing` I mentioned could be like Gleam's `Nil`, where it's the
+;; default return value from functions that return nothing.
+
+;; Okay, I'm a bit worried that I've made things uglier and harder to read over
+;; time... I think this is really rather pretty!
+odd_squares = 1..10
+  >> _ ^ 2
+  >| filter (_ % 2 == 0)
+  >> stdout sep:", "
+;;
+;; Now, how badly have I fucked it up?
+odd_squares = 1..10
+  {_ ^ 2}
+  >| filter(_ % 2 == 0)
+  println(sep:", ")
+;;
+;; The answer is very... I don't even know what to do about that `{_ ^ 2}`
+;; above... Completely ignore that nonsense code snippet!
+
+;; I'll want something like Haskell's `do` notation! Or, I think it's similar
+;; to Gleam's `use`? Where, in the pipeline, you have the option to bind the
+;; pipeline value at that point to a name that can be used later in the
+;; pipeline. Also like "Rule 4" of Chain.jl
+
+;; Call lists "collections"? And contrast those to "streams"? The "collections"
+;; would be like Racket / CL's "values" (the type of functions that return
+;; multiple values!). Maybe folow the metaphor and have "streams" and "pools"?
+;; But "collection" and "list" are certainly clearly than "pool"... But I do
+;; like the idea of unifying the "list" and "function arguments" concepts! That
+;; would also mean that lists and dictionaries could be unified? Just add a tag
+;; to the value!
+example_pool = (42, "foo", good:True) ; A number, string, then key-value pair
+
+;; Steal Gleam's idea of unifying `enums` and `structs`! Though, perhaps instead
+;; of calling it `type`, call it `data` like Haskell? Eh, actually maybe type is
+;; better... I feel like "data" is the actual value, and `type` is describing
+;; its "shape"
+
+;; Perhaps then the "function call / partial application" syntax:
+print("Hello, World!", end:"\n")
+;; Is just sugar for the following?
+("Hello, World!", end:"\n") print
+;; But with a higher precedence? So perhaps more properly:
+print("Hello, World!", end:"\n") == {("Hello, World!", end:"\n") print}
+
+;; What if I kept `[]` for these pools, and went back to `()` for grouping?
+print["Hello, World!", end:"\n"] == (["Hello, World!", end:"\n"] print)
+;; Hmm, I'm on the fence, but I think not... I don't want to get too crazy, just
+;; for the sake of being different (on that note, revisit your comment syntax
+;; maybe...) I think `()` is pretty universal for function calls, and `{}`
+;; pretty universal for blocks. Tuples are collections kinda like pools, and
+;; they use `()` in most languages, and if Gleam can get away with replacing
+;; `()` with `{}` when grouping expressions, so can I...
+
+;; Also I'll need to think some more about comma-separators? Which is nicer:
+print("Hello, World!" end:"\n") == {("Hello, World!" end:"\n") print}
+;; Or
+print("Hello, World!", end:"\n") == {("Hello, World!", end:"\n") print}
+;; I'd say that, to my eye currently, perhaps the version with commas is easier
+;; to read, but maybe that's just because I'm so used to it? Lisp gets away
+;; without them, so perhaps I should too?
+
+;; After all, no commas means no worrying about trailing commas when things
+;; become multiline! Simpler diffs without needing to remember or get a
+;; formatter involved...
+lots_of_values = (
+  42
+  "foo"
+  good:True
+)
+;; One of the downsides, however, is that I cannot have any spaces around the
+;; `:` in `good:True`...
+
+;; I should consider how visibility will work... Python is awful here, making it
+;; completely impossible to hide code, only ignoring `_` prefixed items as a
+;; courtesy when doing `from whatever import *`, and I don't think I love
+;; Haskell's approach of needing to re-list the name of public functions on the
+;; `module` line either... Honestly, I think Rust (and Gleam) do this best with
+;; just a `pub` prefix in front of things you want public. Everything else is
+;; hidden by default. Issue? That doesn't look nice with Haskell's bare
+;; bindings? I think this looks goofier:
+pub lots_of_values = ...
+;; Than this:
+pub let lots_of_values = ...
+;; Especially when some things that need to have public / private control (like
+;; types) already need a keyword to introduce them:
+type Whatever
+;; And
+pub type Whatever
+
+;; Perhaps I should have four types of toplevel "items" (simpler than Rust's
+;; "Item" concept: https://doc.rust-lang.org/reference/items.html): `use` (for
+;; importing code from modules), `type` (same as Gleam), `fn` (functions), and
+;; `val` (for values — static or const in Rust, let in Gleam)
+;;
+;; What I like about this: I could unify lambda notation with named function
+;; notation, exactly like Gleam (just `fn(x, y) {...}` for lambdas), and the
+;; `pub` keyword looks a lot less wierd...
+;;
+;; What I don't like about this: it splits up the previously more unified
+;; "binding" concept, where constants and functions looked similar (as they do
+;; in Haskell)... But really, shouldn't `type`s belong to that too? Don't they
+;; also introduce a new binding? Well, really, all of those "toplevel items" do.
+;;
+;; So if I wanted to be consistent about bindings being some unified concept,
+;; then I'd want something closer to Scheme's `define`... But even then, things
+;; like `struct` exist that introduce other bindings!
+;;
+;; Well, I like values being thought of as zero-argument functions... So again,
+;; I'd like to keep those "bindings" unified. And it is different from those
+;; other "toplevel items", because things like `use` and `type` can introduce
+;; several new bindings at once!
+;;
+;; Well, perhaps `type` could just be thought of as a function that takes a pool
+;; and returns a set of bindings? Even `use` doesn't need to be special — just a
+;; binding that gives the "fully qualified path" a shorter name?
+;;
+;; Okay, so perhaps the bindings (the `=` operator) will be our super-powered,
+;; unifying concept? The language, when resolving a binding, just looks up all
+;; of the bindings with the same name, compatible arguments, then dispatches? If
+;; I ever did want some syntactic sugar for things like `type` and `use`, I
+;; could include them as macros?
+;;
+;; That would be a nice, no magic approach to the language. How does the `use`
+;; system work? Well, go and check out the code for it!
+
+;; On macros, I think they are vital for keeping my small-core language
+;; expressive... Though it's worth doing some more looking at Koka which gets by
+;; alright without them? No great metaprogramming / generics there, if I
+;; recall correctly...
+;;
+;; I think I'll want my macros to just be functions that return a "syntax
+;; object" like Racket, and I should have some syntax for signaling when that
+;; expansion should be at "compile-time" and dropped in in-place. Essentially,
+;; I don't want a `define-macro` because I don't want a `define-function`. I
+;; want just a binding with `=`, and for the caller to decide if it should be
+;; evaluated a "compile time" or "run time". Damn... That actually is sounding
+;; a lot like Zig's "comptime" now... I should look at that again!
+;;
+;; I think the place to loop this in is during binding resolution, so I'd like
+;; some prefix or suffix that you can add to the name of the binding (like the
+;; `!` suffix in Rust, or `@` prefix in Julia) that triggers that "comptime"
+;; execution! So something like `@use(...)` would run as that module is being
+;; parsed, then the resultant code dropped in! I will, however, need to think
+;; about how this interacts with quoting and eager evalutation... My sugar would
+;; become a bit more complex (just using Lisp's `'` for example here):
+@use(std/io std/math) == @{'(std/io std/math) use}
+;;
+;; As an aside macro note, I'll need to think about / research how languages do
+;; "quoting" without Lisp's syntax. I think Julia is the place to go for this!
+;;
+;; Macro hygine is a bit of a scary concept, since leaving hygine to the user is
+;; a pain for them, but I need partially non-hygenic macros if I'm going to use
+;; them to introduce top-level bindings via `@use` and `@type`! Maybe it's as
+;; simple as mangling every name going in and out of the macro to keep it
+;; hygenic, but if the final, top-level syntax object being returned is a
+;; binding, then it's obvious that the user is trying to introduce a binding via
+;; the macro and that final, "tail-position" binding name is left unmangled?
+
+;; For keywords, I like when things have full, non-abbreviated names, as I think
+;; that's often clearer, but I think it's different when you're using those long
+;; names to explain what your variables store / what your functions do and when
+;; you're requiring them as part of the language — there, I think it's best to
+;; be terse, like Haskell, so `use` over `using`, `val` over `value`, and
+;; `fn` over `function` seems reasonable? They are also all abbreviations used
+;; plenty by other languages! And `pub use`, `pub val`, `pub fn`, and `pub type`
+;; all make sense and are pretty terse. The fewer characters that are taken up
+;; by language keywords, the more that users can use to actually describe their
+;; unique code.
+
+;; Maybe instead of matching types with `:`, I should take the more Haskell
+;; approach and have the types be capitalized wrappers? So, just using `()` for
+;; the brackets (probably the wrong choice), this:
+filter(p? xs:List=[]) = ; whatever
+;; Becomes this:
+filter(p? List(xs):[]) = ; whatever
+;; The `=` is left only to the fancy pattern-matching binding operation, and the
+;; default value is given just as it would be in an argument pool — key:"value".
+;; This, of course, let's you pattern match on the contents of a `type`, which
+;; is absolutely vital!
+;; Also, maybe that `()` choice is correct — the contents of a type should be
+;; "pools", so pattern matching them should look the same!
+
+;; All literals should be considered "pools" of a single value! That way, this:
+main = "Hello, Lace!" println
+;; Is the same as:
+main = ("Hello, Lace!") println
+;; Is the same as:
+main = println("Hello, Lace!")
+
+;; Whilst I think it would be really nice to have a maximally minimalist
+;; language where things like import statements (via `@use(...)`) are just
+;; macros under the hood, I do think that that might make code look a little
+;; bit uglier... Perhaps then, the way to balance these things is to build up
+;; first a core of the language with Lisp / S-expr syntax — iron out the
+;; minimalism there — then once I have the hyper-minimal language built up, I
+;; can add all of the "syntactic sugar" on top? Then all I'll need is a
+;; single-page "cheat sheet" that shows how different sugar is translated into
+;; the super minimal S-expr lang!
+;;
+;; So let's first build my minimal language using the minimal syntax (S-exprs),
+;; then I can work on the "making it look pretty" part after that. It's a good
+;; separation of concerns I think. Minimalism, then (optional) aesthetics!
+;;
+;; That also makes things a *lot* easier to initially get working in Racket, and
+;; kicks a lot of the syntactic complexity down the road, until after the
+;; language's semantics are fully ironed out!
+;;
+;; Try to keep the Lisp and non-Lisp syntaxes / keywords as similar as
+;; possible — it would be a little confusing to use `define` in the Lisp and
+;; something like `=` in the non-Lisp. This will be a bit of a unique
+;; challenge if I do decide to persue this strongly (since I'll end up with a
+;; bit of an ugly Lisp or a bit of an ugly non-Lisp), so maybe this isn't
+;; entirely vital.
+;;
+;; In fact, yeah, focus on making a really pretty Lisp first. Then worry about
+;; minimizing the distances between the Lisp and non-Lisp later. DO NOT THINK
+;; ABOUT SYNTAX UNTIL THE LISP IS DONE!
+
+;; 2025-08-03 Update ===========================================================
 
 main = println("Hello, Lace!")
 main = println(["Hello" "Lace!"] sep:", ")
@@ -28,7 +276,7 @@ filter(p? x:Item&p?) = x
 ;; How do I mix type specifiers / predicates and default values? Like this:
 filter(p? xs:List=[]) = ; whatever
 
-;; End 2025-08-03 Update =======================================================
+;; Initial Brainstorming =======================================================
 
 ;; This is a comment
 "This is a docstring?"
